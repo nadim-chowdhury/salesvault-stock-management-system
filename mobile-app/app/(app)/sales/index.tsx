@@ -25,6 +25,7 @@ import {
   Shadow,
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
+import DateRangePicker from "../../../src/components/ui/DateRangePicker";
 
 type PaymentFilter = "ALL" | "PAID" | "PENDING" | "CANCELLED";
 type SortOption = "newest" | "oldest" | "amount_asc" | "amount_desc";
@@ -47,6 +48,8 @@ export default function SalesListScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showSort, setShowSort] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce search input — 400ms delay
@@ -71,6 +74,8 @@ export default function SalesListScreen() {
         if (debouncedSearch.trim()) {
           params.search = debouncedSearch.trim();
         }
+        if (dateFrom) params.from = dateFrom;
+        if (dateTo) params.to = dateTo;
         const response = await api.get(endpoint, { params });
         const result = response.data?.data || response.data;
         const items =
@@ -92,7 +97,7 @@ export default function SalesListScreen() {
         setLoadingMore(false);
       }
     },
-    [isAdmin, paymentFilter, debouncedSearch],
+    [isAdmin, paymentFilter, debouncedSearch, dateFrom, dateTo],
   );
 
   // Re-fetch when screen comes into focus
@@ -396,6 +401,16 @@ export default function SalesListScreen() {
           })}
         </View>
       )}
+
+      {/* Date Range Filter */}
+      <DateRangePicker
+        fromDate={dateFrom}
+        toDate={dateTo}
+        onApply={(from, to) => {
+          setDateFrom(from);
+          setDateTo(to);
+        }}
+      />
 
       {loading && sales.length === 0 ? (
         <View style={styles.center}>
