@@ -44,6 +44,15 @@ export default function CreateUserScreen() {
       Alert.alert("Validation", "Password must be at least 8 characters");
       return;
     }
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+    if (!passwordRegex.test(password)) {
+      Alert.alert(
+        "Validation",
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
+      );
+      return;
+    }
     setLoading(true);
     try {
       await api.post(Endpoints.USERS, {
@@ -134,7 +143,7 @@ export default function CreateUserScreen() {
           />
           <Input
             label="Password *"
-            placeholder="Min 8 characters"
+            placeholder="Min 8 chars, A-z, 0-9, @$!%*?&"
             value={password}
             onChangeText={setPassword}
             isPassword
