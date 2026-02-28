@@ -32,6 +32,7 @@ export default function UsersLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: "User Management" }} />
+      <Stack.Screen name="create" options={{ title: "Create User" }} />
     </Stack>
   );
 }

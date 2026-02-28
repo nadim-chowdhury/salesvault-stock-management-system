@@ -56,8 +56,6 @@ export default function CreateUserScreen() {
     }
   };
 
-  const roles = ["ADMIN", "MANAGER", "SALESPERSON"];
-
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -91,18 +89,30 @@ export default function CreateUserScreen() {
       />
 
       <Text style={[styles.label, { color: colors.textSecondary }]}>Role</Text>
+      <Button
+        title="SALESPERSON"
+        variant={role === "SALESPERSON" ? "primary" : "secondary"}
+        size="md"
+        onPress={() => setRole("SALESPERSON")}
+        style={{ marginBottom: Spacing.sm }}
+      />
       <View style={styles.roleRow}>
-        {roles.map((r) => (
-          <Button
-            key={r}
-            title={r}
-            variant={role === r ? "primary" : "secondary"}
-            size="sm"
-            fullWidth={false}
-            onPress={() => setRole(r)}
-            style={{ flex: 1 }}
-          />
-        ))}
+        <Button
+          title="ADMIN"
+          variant={role === "ADMIN" ? "primary" : "secondary"}
+          size="sm"
+          fullWidth={false}
+          onPress={() => setRole("ADMIN")}
+          style={{ flex: 1 }}
+        />
+        <Button
+          title="MANAGER"
+          variant={role === "MANAGER" ? "primary" : "secondary"}
+          size="sm"
+          fullWidth={false}
+          onPress={() => setRole("MANAGER")}
+          style={{ flex: 1 }}
+        />
       </View>
 
       <Button

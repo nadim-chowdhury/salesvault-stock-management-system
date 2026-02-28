@@ -32,6 +32,7 @@ export default function StockLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: "Stock Management" }} />
+      <Stack.Screen name="assign" options={{ title: "Assign Stock" }} />
     </Stack>
   );
 }
