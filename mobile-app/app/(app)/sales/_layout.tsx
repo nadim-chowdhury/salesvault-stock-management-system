@@ -31,11 +31,19 @@ export default function SalesLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen
         name="create"
-        options={{ title: "Create Sale", headerLeft: backButton }}
+        options={{
+          title: "Create Sale",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="[id]"
-        options={{ title: "Sale Details", headerLeft: backButton }}
+        options={{
+          title: "Sale Details",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
     </Stack>
   );

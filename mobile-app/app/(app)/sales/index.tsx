@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   RefreshControl,
   useColorScheme,
   ActivityIndicator,
-  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "expo-router";
@@ -27,6 +27,7 @@ import {
 import Badge from "../../../src/components/ui/Badge";
 
 type PaymentFilter = "ALL" | "PAID" | "UNPAID" | "CANCELLED";
+type SortOption = "newest" | "oldest" | "amount_asc" | "amount_desc";
 
 export default function SalesListScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -38,10 +39,26 @@ export default function SalesListScreen() {
   const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("ALL");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showSort, setShowSort] = useState(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce search input — 400ms delay
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [search]);
 
   const fetchSales = useCallback(
     async (pageNum = 1, isRefresh = false) => {
@@ -50,6 +67,9 @@ export default function SalesListScreen() {
         const params: any = { page: pageNum, limit: 20 };
         if (paymentFilter !== "ALL") {
           params.payment_status = paymentFilter;
+        }
+        if (debouncedSearch.trim()) {
+          params.search = debouncedSearch.trim();
         }
         const response = await api.get(endpoint, { params });
         const result = response.data?.data || response.data;
@@ -72,7 +92,7 @@ export default function SalesListScreen() {
         setLoadingMore(false);
       }
     },
-    [isAdmin, paymentFilter],
+    [isAdmin, paymentFilter, debouncedSearch],
   );
 
   // Re-fetch when screen comes into focus
@@ -121,6 +141,37 @@ export default function SalesListScreen() {
     { label: "Unpaid", value: "UNPAID", icon: "time-outline" },
     { label: "Cancelled", value: "CANCELLED", icon: "close-circle-outline" },
   ];
+
+  const sortOptions: {
+    label: string;
+    value: SortOption;
+    icon: keyof typeof Ionicons.glyphMap;
+  }[] = [
+    { label: "Newest", value: "newest", icon: "time-outline" },
+    { label: "Oldest", value: "oldest", icon: "hourglass-outline" },
+    { label: "Amount ↑", value: "amount_asc", icon: "trending-up-outline" },
+    { label: "Amount ↓", value: "amount_desc", icon: "trending-down-outline" },
+  ];
+
+  const sortedSales = [...sales].sort((a, b) => {
+    switch (sortBy) {
+      case "oldest":
+        return (
+          new Date(a.created_at || 0).getTime() -
+          new Date(b.created_at || 0).getTime()
+        );
+      case "amount_asc":
+        return Number(a.total_amount || 0) - Number(b.total_amount || 0);
+      case "amount_desc":
+        return Number(b.total_amount || 0) - Number(a.total_amount || 0);
+      case "newest":
+      default:
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+    }
+  });
 
   const renderSale = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -214,12 +265,33 @@ export default function SalesListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Filter Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
+      {/* Search */}
+      <View
+        style={[
+          styles.searchBar,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderColor: colors.border,
+          },
+        ]}
       >
+        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+        <TextInput
+          placeholder="Search by customer name..."
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          style={[styles.searchInput, { color: colors.text }]}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Filter + Sort Row */}
+      <View style={styles.filterRow}>
         {filterChips.map((chip) => {
           const isActive = paymentFilter === chip.value;
           return (
@@ -254,10 +326,76 @@ export default function SalesListScreen() {
           );
         })}
         <View style={styles.chipSpacer} />
-        <Text style={[styles.countText, { color: colors.textMuted }]}>
-          {sales.length} sale{sales.length !== 1 ? "s" : ""}
-        </Text>
-      </ScrollView>
+        <TouchableOpacity
+          style={[
+            styles.sortBtn,
+            {
+              backgroundColor: showSort
+                ? colors.primary
+                : colors.surfaceSecondary,
+              borderColor: showSort ? colors.primary : colors.border,
+            },
+          ]}
+          onPress={() => setShowSort(!showSort)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="swap-vertical-outline"
+            size={14}
+            color={showSort ? "#FFF" : colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.chipText,
+              { color: showSort ? "#FFF" : colors.textSecondary },
+            ]}
+          >
+            Sort
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sort Options */}
+      {showSort && (
+        <View style={styles.sortRow}>
+          {sortOptions.map((opt) => {
+            const isActive = sortBy === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.sortChip,
+                  {
+                    backgroundColor: isActive
+                      ? colors.primary + "15"
+                      : colors.surfaceSecondary,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => {
+                  setSortBy(opt.value);
+                  setShowSort(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={opt.icon}
+                  size={12}
+                  color={isActive ? colors.primary : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    { color: isActive ? colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       {loading && sales.length === 0 ? (
         <View style={styles.center}>
@@ -265,7 +403,7 @@ export default function SalesListScreen() {
         </View>
       ) : (
         <FlatList
-          data={sales}
+          data={sortedSales}
           renderItem={renderSale}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
@@ -296,11 +434,13 @@ export default function SalesListScreen() {
                 color={colors.textMuted}
               />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {paymentFilter !== "ALL"
-                  ? `No ${paymentFilter.toLowerCase()} sales`
-                  : "No sales yet"}
+                {search
+                  ? "No matching sales"
+                  : paymentFilter !== "ALL"
+                    ? `No ${paymentFilter.toLowerCase()} sales`
+                    : "No sales yet"}
               </Text>
-              {paymentFilter === "ALL" && (
+              {paymentFilter === "ALL" && !search && (
                 <Text
                   style={[styles.emptySubtext, { color: colors.textMuted }]}
                 >
@@ -326,12 +466,28 @@ export default function SalesListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm + 2,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSize.md,
+  },
   filterRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     gap: Spacing.sm,
+    flexWrap: "wrap",
   },
   chip: {
     flexDirection: "row",
@@ -346,9 +502,35 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
   },
-  chipSpacer: { width: Spacing.md },
-  countText: {
+  chipSpacer: { flex: 1 },
+  sortBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  sortChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortChipText: {
     fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
   },
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
   card: {

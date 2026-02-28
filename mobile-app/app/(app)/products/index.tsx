@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -27,6 +27,12 @@ import {
 import Badge from "../../../src/components/ui/Badge";
 
 type FilterStatus = "ALL" | "ACTIVE" | "INACTIVE";
+type SortOption =
+  | "newest"
+  | "name_asc"
+  | "name_desc"
+  | "price_asc"
+  | "price_desc";
 
 export default function ProductsListScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -39,16 +45,31 @@ export default function ProductsListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
   const [loadingMore, setLoadingMore] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showSort, setShowSort] = useState(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce search input — 400ms delay
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [search]);
 
   const fetchProducts = useCallback(
     async (pageNum = 1, isRefresh = false) => {
       try {
         const params: any = { page: pageNum, limit: 20 };
-        if (search.trim()) params.search = search.trim();
+        if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
         if (filterStatus === "ACTIVE") params.is_active = "true";
         if (filterStatus === "INACTIVE") params.is_active = "false";
 
@@ -73,7 +94,7 @@ export default function ProductsListScreen() {
         setLoadingMore(false);
       }
     },
-    [search, filterStatus],
+    [debouncedSearch, filterStatus],
   );
 
   // Re-fetch when screen comes into focus (returning from create/edit/detail)
@@ -104,6 +125,37 @@ export default function ProductsListScreen() {
     { label: "Active", value: "ACTIVE" },
     { label: "Inactive", value: "INACTIVE" },
   ];
+
+  const sortOptions: {
+    label: string;
+    value: SortOption;
+    icon: keyof typeof Ionicons.glyphMap;
+  }[] = [
+    { label: "Newest", value: "newest", icon: "time-outline" },
+    { label: "Name A–Z", value: "name_asc", icon: "arrow-up-outline" },
+    { label: "Name Z–A", value: "name_desc", icon: "arrow-down-outline" },
+    { label: "Price ↑", value: "price_asc", icon: "trending-up-outline" },
+    { label: "Price ↓", value: "price_desc", icon: "trending-down-outline" },
+  ];
+
+  const sortedProducts = [...products].sort((a, b) => {
+    switch (sortBy) {
+      case "name_asc":
+        return (a.name || "").localeCompare(b.name || "");
+      case "name_desc":
+        return (b.name || "").localeCompare(a.name || "");
+      case "price_asc":
+        return Number(a.price || 0) - Number(b.price || 0);
+      case "price_desc":
+        return Number(b.price || 0) - Number(a.price || 0);
+      case "newest":
+      default:
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+    }
+  });
 
   const renderProduct = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -205,7 +257,7 @@ export default function ProductsListScreen() {
         )}
       </View>
 
-      {/* Filter Chips */}
+      {/* Filter + Sort Row */}
       <View style={styles.filterRow}>
         {filterChips.map((chip) => {
           const isActive = filterStatus === chip.value;
@@ -236,10 +288,76 @@ export default function ProductsListScreen() {
           );
         })}
         <View style={styles.chipSpacer} />
-        <Text style={[styles.countText, { color: colors.textMuted }]}>
-          {products.length} product{products.length !== 1 ? "s" : ""}
-        </Text>
+        <TouchableOpacity
+          style={[
+            styles.sortBtn,
+            {
+              backgroundColor: showSort
+                ? colors.primary
+                : colors.surfaceSecondary,
+              borderColor: showSort ? colors.primary : colors.border,
+            },
+          ]}
+          onPress={() => setShowSort(!showSort)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="swap-vertical-outline"
+            size={14}
+            color={showSort ? "#FFF" : colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.chipText,
+              { color: showSort ? "#FFF" : colors.textSecondary },
+            ]}
+          >
+            Sort
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Sort Options */}
+      {showSort && (
+        <View style={styles.sortRow}>
+          {sortOptions.map((opt) => {
+            const isActive = sortBy === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.sortChip,
+                  {
+                    backgroundColor: isActive
+                      ? colors.primary + "15"
+                      : colors.surfaceSecondary,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => {
+                  setSortBy(opt.value);
+                  setShowSort(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={opt.icon}
+                  size={12}
+                  color={isActive ? colors.primary : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    { color: isActive ? colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       {loading && products.length === 0 ? (
         <View style={styles.center}>
@@ -247,7 +365,7 @@ export default function ProductsListScreen() {
         </View>
       ) : (
         <FlatList
-          data={products}
+          data={sortedProducts}
           renderItem={renderProduct}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
@@ -343,8 +461,34 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.medium,
   },
   chipSpacer: { flex: 1 },
-  countText: {
+  sortBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  sortChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortChipText: {
     fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
   },
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
   card: {

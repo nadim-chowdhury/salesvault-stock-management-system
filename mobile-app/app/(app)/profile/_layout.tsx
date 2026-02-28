@@ -38,47 +38,91 @@ export default function ProfileLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen
         name="users"
-        options={{ title: "User Management", headerLeft: backButton }}
+        options={{
+          title: "User Management",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="user-create"
-        options={{ title: "Create User", headerLeft: backButton }}
+        options={{
+          title: "Create User",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="user-detail"
-        options={{ title: "User Details", headerLeft: backButton }}
+        options={{
+          title: "User Details",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="user-edit"
-        options={{ title: "Edit User", headerLeft: backButton }}
+        options={{
+          title: "Edit User",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="warehouses"
-        options={{ title: "Warehouses", headerLeft: backButton }}
+        options={{
+          title: "Warehouses",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="warehouse-create"
-        options={{ title: "Create Warehouse", headerLeft: backButton }}
+        options={{
+          title: "Create Warehouse",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="warehouse-detail"
-        options={{ title: "Warehouse Details", headerLeft: backButton }}
+        options={{
+          title: "Warehouse Details",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="warehouse-edit"
-        options={{ title: "Edit Warehouse", headerLeft: backButton }}
+        options={{
+          title: "Edit Warehouse",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="stock"
-        options={{ title: "Stock Management", headerLeft: backButton }}
+        options={{
+          title: "Stock Management",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="stock-add"
-        options={{ title: "Add Stock", headerLeft: backButton }}
+        options={{
+          title: "Add Stock",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="stock-assign"
-        options={{ title: "Assign Stock", headerLeft: backButton }}
+        options={{
+          title: "Assign Stock",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
     </Stack>
   );

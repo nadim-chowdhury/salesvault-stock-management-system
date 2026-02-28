@@ -31,15 +31,27 @@ export default function ProductsLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen
         name="create"
-        options={{ title: "Create Product", headerLeft: backButton }}
+        options={{
+          title: "Create Product",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="[id]"
-        options={{ title: "Product Details", headerLeft: backButton }}
+        options={{
+          title: "Product Details",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="edit"
-        options={{ title: "Edit Product", headerLeft: backButton }}
+        options={{
+          title: "Edit Product",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
       />
     </Stack>
   );

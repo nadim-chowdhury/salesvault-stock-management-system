@@ -235,7 +235,7 @@ export default function CreateSaleScreen() {
                   key={i}
                   style={[
                     styles.stockCard,
-                    Shadow.sm,
+                    !isAdded && Shadow.sm,
                     {
                       backgroundColor: isAdded
                         ? colors.primary + "10"
