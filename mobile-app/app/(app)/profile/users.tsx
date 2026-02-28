@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   useColorScheme,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
@@ -48,9 +48,11 @@ export default function UsersListScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUsers();
+    }, [fetchUsers]),
+  );
   const onRefresh = () => {
     setRefreshing(true);
     fetchUsers();
@@ -68,12 +70,19 @@ export default function UsersListScreen() {
   };
 
   const renderUser = ({ item }: { item: any }) => (
-    <View
+    <TouchableOpacity
       style={[
         styles.card,
         Shadow.sm,
         { backgroundColor: colors.surface, borderColor: colors.borderLight },
       ]}
+      onPress={() =>
+        router.push({
+          pathname: "/(app)/profile/user-detail",
+          params: { id: item.id },
+        })
+      }
+      activeOpacity={0.7}
     >
       <View style={styles.row}>
         <View
@@ -94,7 +103,7 @@ export default function UsersListScreen() {
           {!item.is_active && <Badge text="Inactive" variant="danger" />}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (

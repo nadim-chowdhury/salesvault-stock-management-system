@@ -19,7 +19,6 @@ import {
   BorderRadius,
   Shadow,
 } from "../../../src/constants/theme";
-import Card from "../../../src/components/ui/Card";
 import Badge from "../../../src/components/ui/Badge";
 import Button from "../../../src/components/ui/Button";
 

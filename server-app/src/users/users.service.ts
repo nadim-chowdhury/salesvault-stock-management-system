@@ -37,7 +37,7 @@ export class UsersService {
       throw new ConflictException('Email already exists');
     }
 
-    const rounds = this.configService.get<number>('BCRYPT_ROUNDS', 12);
+    const rounds = parseInt(this.configService.get('BCRYPT_ROUNDS', '12'), 10);
     const passwordHash = await bcrypt.hash(dto.password, rounds);
 
     const user = this.userRepo.create({
@@ -199,7 +199,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const rounds = this.configService.get<number>('BCRYPT_ROUNDS', 12);
+    const rounds = parseInt(this.configService.get('BCRYPT_ROUNDS', '12'), 10);
     user.password_hash = await bcrypt.hash(dto.new_password, rounds);
     user.failed_attempts = 0;
     user.locked_until = null;

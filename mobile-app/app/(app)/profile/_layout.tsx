@@ -45,8 +45,28 @@ export default function ProfileLayout() {
         options={{ title: "Create User", headerLeft: backButton }}
       />
       <Stack.Screen
+        name="user-detail"
+        options={{ title: "User Details", headerLeft: backButton }}
+      />
+      <Stack.Screen
+        name="user-edit"
+        options={{ title: "Edit User", headerLeft: backButton }}
+      />
+      <Stack.Screen
         name="warehouses"
         options={{ title: "Warehouses", headerLeft: backButton }}
+      />
+      <Stack.Screen
+        name="warehouse-create"
+        options={{ title: "Create Warehouse", headerLeft: backButton }}
+      />
+      <Stack.Screen
+        name="warehouse-detail"
+        options={{ title: "Warehouse Details", headerLeft: backButton }}
+      />
+      <Stack.Screen
+        name="warehouse-edit"
+        options={{ title: "Edit Warehouse", headerLeft: backButton }}
       />
       <Stack.Screen
         name="stock"
