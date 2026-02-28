@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   RefreshControl,
   useColorScheme,
@@ -24,43 +25,129 @@ import {
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
 
+type FilterStatus = "ALL" | "ACTIVE" | "INACTIVE";
+type SortOption = "newest" | "name_asc" | "name_desc" | "location";
+
 export default function WarehousesScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
   const { user } = useAuthStore();
   const canCreate = user?.role === "ADMIN" || user?.role === "MANAGER";
+
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showSort, setShowSort] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchWarehouses = useCallback(async () => {
-    try {
-      const response = await api.get(Endpoints.WAREHOUSES, {
-        params: { page: 1, limit: 50 },
-      });
-      const result = response.data?.data || response.data;
-      setWarehouses(
-        result?.data || result?.items || (Array.isArray(result) ? result : []),
-      );
-    } catch (err) {
-      console.error("Warehouses fetch error:", err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  // Debounce search input — 400ms delay
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [search]);
+
+  const fetchWarehouses = useCallback(
+    async (pageNum = 1, isRefresh = false) => {
+      try {
+        const params: any = { page: pageNum, limit: 20 };
+        if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+        if (filterStatus === "ACTIVE") params.is_active = "true";
+        if (filterStatus === "INACTIVE") params.is_active = "false";
+
+        const response = await api.get(Endpoints.WAREHOUSES, { params });
+        const result = response.data?.data || response.data;
+        const items =
+          result?.data ||
+          result?.items ||
+          (Array.isArray(result) ? result : []);
+
+        if (isRefresh || pageNum === 1) {
+          setWarehouses(items);
+        } else {
+          setWarehouses((prev) => [...prev, ...items]);
+        }
+        setHasMore(items.length >= 20);
+      } catch (err) {
+        console.error("Warehouses fetch error:", err);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
+    },
+    [debouncedSearch, filterStatus],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      fetchWarehouses();
+      setLoading(true);
+      setPage(1);
+      fetchWarehouses(1, true);
     }, [fetchWarehouses]),
   );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchWarehouses();
+    setPage(1);
+    fetchWarehouses(1, true);
   };
+
+  const loadMore = () => {
+    if (!hasMore || loading || loadingMore) return;
+    setLoadingMore(true);
+    const next = page + 1;
+    setPage(next);
+    fetchWarehouses(next);
+  };
+
+  const filterChips: { label: string; value: FilterStatus }[] = [
+    { label: "All", value: "ALL" },
+    { label: "Active", value: "ACTIVE" },
+    { label: "Inactive", value: "INACTIVE" },
+  ];
+
+  const sortOptions: {
+    label: string;
+    value: SortOption;
+    icon: keyof typeof Ionicons.glyphMap;
+  }[] = [
+    { label: "Newest", value: "newest", icon: "time-outline" },
+    { label: "Name A–Z", value: "name_asc", icon: "arrow-up-outline" },
+    { label: "Name Z–A", value: "name_desc", icon: "arrow-down-outline" },
+    { label: "Location", value: "location", icon: "location-outline" },
+  ];
+
+  const sortedWarehouses = [...warehouses].sort((a, b) => {
+    switch (sortBy) {
+      case "name_asc":
+        return (a.name || "").localeCompare(b.name || "");
+      case "name_desc":
+        return (b.name || "").localeCompare(a.name || "");
+      case "location":
+        return (a.location || "").localeCompare(b.location || "");
+      case "newest":
+      default:
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+    }
+  });
+
+  const hasFilters = filterStatus !== "ALL" || search.length > 0;
 
   const renderWarehouse = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -89,9 +176,16 @@ export default function WarehousesScreen() {
         <View style={{ flex: 1 }}>
           <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
           {item.location && (
-            <Text style={[styles.location, { color: colors.textMuted }]}>
-              {item.location}
-            </Text>
+            <View style={styles.metaRow}>
+              <Ionicons
+                name="location-outline"
+                size={12}
+                color={colors.textMuted}
+              />
+              <Text style={[styles.location, { color: colors.textMuted }]}>
+                {item.location}
+              </Text>
+            </View>
           )}
         </View>
         <Badge
@@ -104,13 +198,140 @@ export default function WarehousesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {loading ? (
+      {/* Search */}
+      <View
+        style={[
+          styles.searchBar,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+        <TextInput
+          placeholder="Search warehouses..."
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          style={[styles.searchInput, { color: colors.text }]}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Filter + Sort Row */}
+      <View style={styles.filterRow}>
+        {filterChips.map((chip) => {
+          const isActive = filterStatus === chip.value;
+          return (
+            <TouchableOpacity
+              key={chip.value}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: isActive
+                    ? colors.primary
+                    : colors.surfaceSecondary,
+                  borderColor: isActive ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setFilterStatus(chip.value)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: isActive ? "#FFFFFF" : colors.textSecondary },
+                ]}
+              >
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+        <View style={styles.chipSpacer} />
+        <TouchableOpacity
+          style={[
+            styles.sortBtn,
+            {
+              backgroundColor: showSort
+                ? colors.primary
+                : colors.surfaceSecondary,
+              borderColor: showSort ? colors.primary : colors.border,
+            },
+          ]}
+          onPress={() => setShowSort(!showSort)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="swap-vertical-outline"
+            size={14}
+            color={showSort ? "#FFF" : colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.chipText,
+              { color: showSort ? "#FFF" : colors.textSecondary },
+            ]}
+          >
+            Sort
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sort Options */}
+      {showSort && (
+        <View style={styles.sortRow}>
+          {sortOptions.map((opt) => {
+            const isActive = sortBy === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.sortChip,
+                  {
+                    backgroundColor: isActive
+                      ? colors.primary + "15"
+                      : colors.surfaceSecondary,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => {
+                  setSortBy(opt.value);
+                  setShowSort(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={opt.icon}
+                  size={12}
+                  color={isActive ? colors.primary : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    { color: isActive ? colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+
+      {loading && warehouses.length === 0 ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
-          data={warehouses}
+          data={sortedWarehouses}
           renderItem={renderWarehouse}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
@@ -121,7 +342,18 @@ export default function WarehousesScreen() {
               tintColor={colors.primary}
             />
           }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator
+                size="small"
+                color={colors.primary}
+                style={{ paddingVertical: Spacing.lg }}
+              />
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons
@@ -130,12 +362,20 @@ export default function WarehousesScreen() {
                 color={colors.textMuted}
               />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                No warehouses
+                {hasFilters ? "No matching warehouses" : "No warehouses yet"}
               </Text>
+              {canCreate && !hasFilters && (
+                <Text
+                  style={[styles.emptySubtext, { color: colors.textMuted }]}
+                >
+                  Tap + to create your first warehouse
+                </Text>
+              )}
             </View>
           }
         />
       )}
+
       {canCreate && (
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: colors.primary }]}
@@ -152,7 +392,69 @@ export default function WarehousesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  list: { padding: Spacing.lg, paddingBottom: 100 },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm + 2,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSize.md,
+  },
+  filterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
+  chipSpacer: { flex: 1 },
+  sortBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  sortChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortChipText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
+  list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
   card: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
@@ -168,9 +470,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   name: { fontSize: FontSize.md, fontWeight: FontWeight.medium },
-  location: { fontSize: FontSize.xs, marginTop: 2 },
+  location: { fontSize: FontSize.xs, marginTop: 0 },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
   empty: { alignItems: "center", paddingTop: Spacing["5xl"] },
   emptyText: { fontSize: FontSize.md, marginTop: Spacing.md },
+  emptySubtext: { fontSize: FontSize.sm, marginTop: Spacing.xs },
   fab: {
     position: "absolute",
     bottom: 24,

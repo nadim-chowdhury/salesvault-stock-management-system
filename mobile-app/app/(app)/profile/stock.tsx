@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   RefreshControl,
   useColorScheme,
@@ -24,6 +25,13 @@ import {
 import Badge from "../../../src/components/ui/Badge";
 
 type TabType = "warehouse" | "assignments";
+type StockSort =
+  | "newest"
+  | "product_asc"
+  | "product_desc"
+  | "qty_asc"
+  | "qty_desc";
+type StockFilter = "ALL" | "LOW" | "OK";
 
 export default function StockScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -36,10 +44,31 @@ export default function StockScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Search
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sort & filter
+  const [sortBy, setSortBy] = useState<StockSort>("newest");
+  const [showSort, setShowSort] = useState(false);
+  const [stockFilter, setStockFilter] = useState<StockFilter>("ALL");
+
+  // Debounce search input — 400ms delay
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [search]);
+
   const fetchWarehouseStock = useCallback(async () => {
     try {
       const response = await api.get(Endpoints.STOCK, {
-        params: { page: 1, limit: 50 },
+        params: { page: 1, limit: 100 },
       });
       const result = response.data?.data || response.data;
       setStocks(
@@ -53,7 +82,7 @@ export default function StockScreen() {
   const fetchAssignments = useCallback(async () => {
     try {
       const response = await api.get(Endpoints.STOCK_ASSIGNMENTS, {
-        params: { page: 1, limit: 50 },
+        params: { page: 1, limit: 100 },
       });
       const result = response.data?.data || response.data;
       setAssignments(
@@ -82,6 +111,16 @@ export default function StockScreen() {
     fetchAll();
   };
 
+  // Reset search/sort/filter when switching tabs
+  const handleTabSwitch = (newTab: TabType) => {
+    setTab(newTab);
+    setSearch("");
+    setDebouncedSearch("");
+    setSortBy("newest");
+    setStockFilter("ALL");
+    setShowSort(false);
+  };
+
   const tabs: {
     key: TabType;
     label: string;
@@ -90,6 +129,102 @@ export default function StockScreen() {
     { key: "warehouse", label: "Warehouse Stock", icon: "cube-outline" },
     { key: "assignments", label: "Assignments", icon: "people-outline" },
   ];
+
+  const sortOptions: {
+    label: string;
+    value: StockSort;
+    icon: keyof typeof Ionicons.glyphMap;
+  }[] = [
+    { label: "Newest", value: "newest", icon: "time-outline" },
+    { label: "Product A–Z", value: "product_asc", icon: "arrow-up-outline" },
+    { label: "Product Z–A", value: "product_desc", icon: "arrow-down-outline" },
+    { label: "Qty ↑", value: "qty_asc", icon: "trending-up-outline" },
+    { label: "Qty ↓", value: "qty_desc", icon: "trending-down-outline" },
+  ];
+
+  const filterChips: {
+    label: string;
+    value: StockFilter;
+    icon: keyof typeof Ionicons.glyphMap;
+  }[] = [
+    { label: "All", value: "ALL", icon: "list-outline" },
+    { label: "Low Stock", value: "LOW", icon: "warning-outline" },
+    { label: "In Stock", value: "OK", icon: "checkmark-circle-outline" },
+  ];
+
+  // Filter and sort warehouse stock
+  const filteredStocks = stocks
+    .filter((item) => {
+      const name = (item.product?.name || "").toLowerCase();
+      const warehouse = (item.warehouse?.name || "").toLowerCase();
+      const q = debouncedSearch.toLowerCase();
+      if (q && !name.includes(q) && !warehouse.includes(q)) return false;
+      if (stockFilter === "LOW" && (item.quantity ?? 0) >= 10) return false;
+      if (stockFilter === "OK" && (item.quantity ?? 0) < 10) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "product_asc":
+          return (a.product?.name || "").localeCompare(b.product?.name || "");
+        case "product_desc":
+          return (b.product?.name || "").localeCompare(a.product?.name || "");
+        case "qty_asc":
+          return (a.quantity ?? 0) - (b.quantity ?? 0);
+        case "qty_desc":
+          return (b.quantity ?? 0) - (a.quantity ?? 0);
+        case "newest":
+        default:
+          return (
+            new Date(b.created_at || b.added_at || 0).getTime() -
+            new Date(a.created_at || a.added_at || 0).getTime()
+          );
+      }
+    });
+
+  // Filter and sort assignments
+  const filteredAssignments = assignments
+    .filter((item) => {
+      const product = (item.product?.name || "").toLowerCase();
+      const salesperson = (item.salesperson?.name || "").toLowerCase();
+      const warehouse = (item.warehouse?.name || "").toLowerCase();
+      const q = debouncedSearch.toLowerCase();
+      if (
+        q &&
+        !product.includes(q) &&
+        !salesperson.includes(q) &&
+        !warehouse.includes(q)
+      )
+        return false;
+      const remaining = item.quantity_remaining ?? item.quantity ?? 0;
+      if (stockFilter === "LOW" && remaining >= 5) return false;
+      if (stockFilter === "OK" && remaining < 5) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "product_asc":
+          return (a.product?.name || "").localeCompare(b.product?.name || "");
+        case "product_desc":
+          return (b.product?.name || "").localeCompare(a.product?.name || "");
+        case "qty_asc":
+          return (
+            (a.quantity_remaining ?? a.quantity ?? 0) -
+            (b.quantity_remaining ?? b.quantity ?? 0)
+          );
+        case "qty_desc":
+          return (
+            (b.quantity_remaining ?? b.quantity ?? 0) -
+            (a.quantity_remaining ?? a.quantity ?? 0)
+          );
+        case "newest":
+        default:
+          return (
+            new Date(b.assigned_at || b.created_at || 0).getTime() -
+            new Date(a.assigned_at || a.created_at || 0).getTime()
+          );
+      }
+    });
 
   const renderStockItem = ({ item }: { item: any }) => {
     const isLow = (item.quantity ?? 0) < 10;
@@ -211,11 +346,15 @@ export default function StockScreen() {
     </View>
   );
 
-  const data = tab === "warehouse" ? stocks : assignments;
+  const data = tab === "warehouse" ? filteredStocks : filteredAssignments;
   const renderItem = tab === "warehouse" ? renderStockItem : renderAssignment;
   const emptyIcon = tab === "warehouse" ? "cube-outline" : "people-outline";
-  const emptyText =
-    tab === "warehouse" ? "No stock in warehouses" : "No assignments yet";
+  const hasFilters = search.length > 0 || stockFilter !== "ALL";
+  const emptyText = hasFilters
+    ? "No matching items"
+    : tab === "warehouse"
+      ? "No stock in warehouses"
+      : "No assignments yet";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -238,7 +377,7 @@ export default function StockScreen() {
                   borderBottomWidth: 2,
                 },
               ]}
-              onPress={() => setTab(t.key)}
+              onPress={() => handleTabSwitch(t.key)}
               activeOpacity={0.7}
             >
               <Ionicons
@@ -263,6 +402,142 @@ export default function StockScreen() {
           );
         })}
       </View>
+
+      {/* Search */}
+      <View
+        style={[
+          styles.searchBar,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+        <TextInput
+          placeholder={
+            tab === "warehouse"
+              ? "Search by product or warehouse..."
+              : "Search by salesperson or product..."
+          }
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          style={[styles.searchInput, { color: colors.text }]}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Filter + Sort Row */}
+      <View style={styles.filterRow}>
+        {filterChips.map((chip) => {
+          const isActive = stockFilter === chip.value;
+          return (
+            <TouchableOpacity
+              key={chip.value}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: isActive
+                    ? colors.primary
+                    : colors.surfaceSecondary,
+                  borderColor: isActive ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setStockFilter(chip.value)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={chip.icon}
+                size={14}
+                color={isActive ? "#FFFFFF" : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: isActive ? "#FFFFFF" : colors.textSecondary },
+                ]}
+              >
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+        <View style={styles.chipSpacer} />
+        <TouchableOpacity
+          style={[
+            styles.sortBtn,
+            {
+              backgroundColor: showSort
+                ? colors.primary
+                : colors.surfaceSecondary,
+              borderColor: showSort ? colors.primary : colors.border,
+            },
+          ]}
+          onPress={() => setShowSort(!showSort)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="swap-vertical-outline"
+            size={14}
+            color={showSort ? "#FFF" : colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.chipText,
+              { color: showSort ? "#FFF" : colors.textSecondary },
+            ]}
+          >
+            Sort
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sort Options */}
+      {showSort && (
+        <View style={styles.sortRow}>
+          {sortOptions.map((opt) => {
+            const isActive = sortBy === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.sortChip,
+                  {
+                    backgroundColor: isActive
+                      ? colors.primary + "15"
+                      : colors.surfaceSecondary,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => {
+                  setSortBy(opt.value);
+                  setShowSort(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={opt.icon}
+                  size={12}
+                  color={isActive ? colors.primary : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    { color: isActive ? colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.center}>
@@ -332,13 +607,71 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: FontSize.sm,
   },
-  countRow: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xs,
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm + 2,
+    borderWidth: 1,
   },
-  count: {
+  searchInput: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSize.md,
+  },
+  filterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.sm,
+    flexWrap: "wrap",
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  chipText: {
     fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
+  chipSpacer: { flex: 1 },
+  sortBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  sortChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  sortChipText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
   },
   list: { padding: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: 100 },
   card: {
