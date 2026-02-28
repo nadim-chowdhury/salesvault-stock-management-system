@@ -6,8 +6,11 @@ import {
   ScrollView,
   useColorScheme,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import {
@@ -15,6 +18,8 @@ import {
   Spacing,
   FontSize,
   FontWeight,
+  BorderRadius,
+  Shadow,
 } from "../../../src/constants/theme";
 import Button from "../../../src/components/ui/Button";
 import Input from "../../../src/components/ui/Input";
@@ -35,6 +40,10 @@ export default function CreateUserScreen() {
       Alert.alert("Validation", "All fields are required");
       return;
     }
+    if (password.length < 8) {
+      Alert.alert("Validation", "Password must be at least 8 characters");
+      return;
+    }
     setLoading(true);
     try {
       await api.post(Endpoints.USERS, {
@@ -43,7 +52,7 @@ export default function CreateUserScreen() {
         password,
         role,
       });
-      Alert.alert("Success", "User created", [
+      Alert.alert("Success", "User created successfully!", [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err: any) {
@@ -56,89 +65,286 @@ export default function CreateUserScreen() {
     }
   };
 
+  const roles: {
+    label: string;
+    value: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }[] = [
+    { label: "Salesperson", value: "SALESPERSON", icon: "person-outline" },
+    { label: "Manager", value: "MANAGER", icon: "briefcase-outline" },
+    { label: "Admin", value: "ADMIN", icon: "shield-outline" },
+  ];
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
     >
-      <Text style={[styles.title, { color: colors.text }]}>New User</Text>
-      <Input
-        label="Full Name"
-        placeholder="John Doe"
-        value={name}
-        onChangeText={setName}
-        leftIcon="person-outline"
-      />
-      <Input
-        label="Email"
-        placeholder="john@company.com"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        leftIcon="mail-outline"
-      />
-      <Input
-        label="Password"
-        placeholder="Strong password"
-        value={password}
-        onChangeText={setPassword}
-        isPassword
-        leftIcon="lock-closed-outline"
-      />
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.headerSection}>
+          <View
+            style={[
+              styles.iconCircle,
+              { backgroundColor: colors.primary + "15" },
+            ]}
+          >
+            <Ionicons
+              name="person-add-outline"
+              size={28}
+              color={colors.primary}
+            />
+          </View>
+          <Text style={[styles.title, { color: colors.text }]}>New User</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+            Add a new team member to SalesVault
+          </Text>
+        </View>
 
-      <Text style={[styles.label, { color: colors.textSecondary }]}>Role</Text>
-      <Button
-        title="SALESPERSON"
-        variant={role === "SALESPERSON" ? "primary" : "secondary"}
-        size="md"
-        onPress={() => setRole("SALESPERSON")}
-        style={{ marginBottom: Spacing.sm }}
-      />
-      <View style={styles.roleRow}>
-        <Button
-          title="ADMIN"
-          variant={role === "ADMIN" ? "primary" : "secondary"}
-          size="sm"
-          fullWidth={false}
-          onPress={() => setRole("ADMIN")}
-          style={{ flex: 1 }}
-        />
-        <Button
-          title="MANAGER"
-          variant={role === "MANAGER" ? "primary" : "secondary"}
-          size="sm"
-          fullWidth={false}
-          onPress={() => setRole("MANAGER")}
-          style={{ flex: 1 }}
-        />
-      </View>
+        {/* Form Card */}
+        <View
+          style={[
+            styles.formCard,
+            Shadow.sm,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+            },
+          ]}
+        >
+          <Input
+            label="Full Name *"
+            placeholder="e.g. John Doe"
+            value={name}
+            onChangeText={setName}
+            leftIcon="person-outline"
+          />
+          <Input
+            label="Email *"
+            placeholder="e.g. john@company.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            leftIcon="mail-outline"
+          />
+          <Input
+            label="Password *"
+            placeholder="Min 8 characters"
+            value={password}
+            onChangeText={setPassword}
+            isPassword
+            leftIcon="lock-closed-outline"
+          />
+        </View>
 
-      <Button
-        title="Create User"
-        onPress={handleCreate}
-        loading={loading}
-        disabled={!name.trim() || !email.trim() || !password.trim()}
-        size="lg"
-        style={{ marginTop: Spacing.xl }}
-      />
-    </ScrollView>
+        {/* Role Selection */}
+        <View style={styles.sectionWrapper}>
+          <View style={styles.sectionHeader}>
+            <Ionicons
+              name="shield-checkmark"
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Role
+            </Text>
+          </View>
+          <Button
+            title="Salesperson"
+            variant={role === "SALESPERSON" ? "primary" : "secondary"}
+            size="md"
+            onPress={() => setRole("SALESPERSON")}
+            icon={
+              <Ionicons
+                name="person-outline"
+                size={16}
+                color={role === "SALESPERSON" ? "#FFF" : colors.textSecondary}
+              />
+            }
+            style={{ marginBottom: Spacing.sm }}
+          />
+          <View style={styles.roleRow}>
+            <Button
+              title="Manager"
+              variant={role === "MANAGER" ? "primary" : "secondary"}
+              size="md"
+              fullWidth={false}
+              onPress={() => setRole("MANAGER")}
+              icon={
+                <Ionicons
+                  name="briefcase-outline"
+                  size={16}
+                  color={role === "MANAGER" ? "#FFF" : colors.textSecondary}
+                />
+              }
+              style={{ flex: 1 }}
+            />
+            <Button
+              title="Admin"
+              variant={role === "ADMIN" ? "primary" : "secondary"}
+              size="md"
+              fullWidth={false}
+              onPress={() => setRole("ADMIN")}
+              icon={
+                <Ionicons
+                  name="shield-outline"
+                  size={16}
+                  color={role === "ADMIN" ? "#FFF" : colors.textSecondary}
+                />
+              }
+              style={{ flex: 1 }}
+            />
+          </View>
+        </View>
+
+        {/* Preview */}
+        {name && (
+          <View
+            style={[
+              styles.previewCard,
+              {
+                backgroundColor: colors.surfaceSecondary,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
+              Preview
+            </Text>
+            <View style={styles.previewRow}>
+              <View
+                style={[
+                  styles.previewAvatar,
+                  { backgroundColor: colors.primary + "20" },
+                ]}
+              >
+                <Text
+                  style={[styles.previewAvatarText, { color: colors.primary }]}
+                >
+                  {name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View>
+                <Text style={[styles.previewName, { color: colors.text }]}>
+                  {name || "User Name"}
+                </Text>
+                <Text
+                  style={[styles.previewEmail, { color: colors.textMuted }]}
+                >
+                  {email || "email@example.com"}
+                </Text>
+                <Text style={[styles.previewRole, { color: colors.primary }]}>
+                  {role}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        <Button
+          title="Create User"
+          onPress={handleCreate}
+          loading={loading}
+          disabled={!name.trim() || !email.trim() || !password.trim()}
+          size="lg"
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
+  headerSection: {
+    alignItems: "center",
+    marginBottom: Spacing["2xl"],
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
   title: {
     fontSize: FontSize["2xl"],
     fontWeight: FontWeight.bold,
-    marginBottom: Spacing["2xl"],
+    marginBottom: Spacing.xs,
   },
-  label: {
+  subtitle: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    marginBottom: Spacing.sm,
   },
-  roleRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.lg },
+  formCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.xl,
+  },
+  sectionWrapper: {
+    marginBottom: Spacing.xl,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  sectionTitle: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+  },
+  roleRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  previewCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginBottom: Spacing.xl,
+  },
+  previewTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: Spacing.md,
+  },
+  previewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  previewAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previewAvatarText: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  previewName: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+  },
+  previewEmail: {
+    fontSize: FontSize.xs,
+    marginTop: 1,
+  },
+  previewRole: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+    marginTop: 2,
+  },
 });
