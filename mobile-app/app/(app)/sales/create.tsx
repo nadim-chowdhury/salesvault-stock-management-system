@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useAuthStore } from "../../../src/stores/auth-store";
 import {
   Colors,
   Spacing,
@@ -38,26 +39,68 @@ export default function CreateSaleScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdminOrManager = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const [myStock, setMyStock] = useState<any[]>([]);
   const [items, setItems] = useState<SaleItem[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    api
-      .get(Endpoints.MY_STOCK)
-      .then((res) => {
-        const data = res.data?.data || res.data;
-        setMyStock(Array.isArray(data) ? data : data?.items || []);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+  const fetchProducts = useCallback(async () => {
+    try {
+      const res = await api.get(Endpoints.PRODUCTS, {
+        params: { limit: 100, is_active: "true" },
+      });
+      const result = res.data?.data || res.data;
+      const products =
+        result?.data || result?.items || (Array.isArray(result) ? result : []);
+      const normalized = products.map((p: any) => ({
+        product_id: p.id,
+        product: { id: p.id, name: p.name, price: p.price },
+        quantity: 999,
+        quantity_remaining: 999,
+      }));
+      setMyStock(normalized);
+    } catch (err) {
+      console.error("Products fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // Wait for user to be loaded from the auth store
+    if (!user) return;
+
+    setLoading(true);
+
+    if (isAdminOrManager) {
+      // ADMIN/MANAGER: fetch all active products from catalog
+      fetchProducts();
+    } else {
+      // SALESPERSON: fetch assigned stock, fallback to products on 403
+      api
+        .get(Endpoints.MY_STOCK)
+        .then((res) => {
+          const data = res.data?.data || res.data;
+          setMyStock(Array.isArray(data) ? data : data?.items || []);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("My stock error:", err?.response?.status);
+          // Fallback: if 403, fetch products instead
+          if (err?.response?.status === 403) {
+            fetchProducts();
+          } else {
+            setLoading(false);
+          }
+        });
+    }
+  }, [user, isAdminOrManager, fetchProducts]);
 
   const addItem = (stock: any) => {
     const pid = stock.product_id || stock.product?.id;
@@ -149,7 +192,9 @@ export default function CreateSaleScreen() {
           </View>
           <Text style={[styles.title, { color: colors.text }]}>New Sale</Text>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Select products from your stock and record a sale
+            {isAdminOrManager
+              ? "Select products from the catalog and record a sale"
+              : "Select products from your assigned stock"}
           </Text>
         </View>
 
@@ -176,7 +221,9 @@ export default function CreateSaleScreen() {
                 color={colors.textMuted}
               />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                No stock assigned to you
+                {isAdminOrManager
+                  ? "No active products found"
+                  : "No stock assigned to you"}
               </Text>
             </View>
           ) : (
@@ -212,11 +259,14 @@ export default function CreateSaleScreen() {
                       <Text style={[styles.stockName, { color: colors.text }]}>
                         {stock.product?.name || "Product"}
                       </Text>
-                      <Text
-                        style={[styles.stockQty, { color: colors.textMuted }]}
-                      >
-                        Available: {stock.quantity_remaining ?? stock.quantity}
-                      </Text>
+                      {!isAdminOrManager && (
+                        <Text
+                          style={[styles.stockQty, { color: colors.textMuted }]}
+                        >
+                          Available:{" "}
+                          {stock.quantity_remaining ?? stock.quantity}
+                        </Text>
+                      )}
                     </View>
                     <Text
                       style={[styles.stockPrice, { color: colors.primary }]}
@@ -352,7 +402,7 @@ export default function CreateSaleScreen() {
         <View
           style={[
             styles.totalCard,
-            Shadow.md,
+            Shadow.sm,
             {
               backgroundColor: colors.surface,
               borderColor: colors.borderLight,
