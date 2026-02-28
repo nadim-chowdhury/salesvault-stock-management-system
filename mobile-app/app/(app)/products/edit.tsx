@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
@@ -24,45 +24,61 @@ import {
 import Button from "../../../src/components/ui/Button";
 import Input from "../../../src/components/ui/Input";
 
-export default function CreateProductScreen() {
+export default function EditProductScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const {
+    id,
+    name: initialName,
+    price: initialPrice,
+    cost_price: initialCostPrice,
+    description: initialDescription,
+  } = useLocalSearchParams<{
+    id: string;
+    name: string;
+    price: string;
+    cost_price: string;
+    description: string;
+  }>();
 
-  const [name, setName] = useState("");
-  const [sku, setSku] = useState("");
-  const [price, setPrice] = useState("");
-  const [costPrice, setCostPrice] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState(initialName || "");
+  const [price, setPrice] = useState(initialPrice || "");
+  const [costPrice, setCostPrice] = useState(initialCostPrice || "");
+  const [description, setDescription] = useState(initialDescription || "");
   const [loading, setLoading] = useState(false);
 
-  const handleCreate = async () => {
-    if (!name.trim() || !sku.trim() || !price.trim()) {
-      Alert.alert("Validation", "Name, SKU, and Price are required");
+  const hasChanges =
+    name !== (initialName || "") ||
+    price !== (initialPrice || "") ||
+    costPrice !== (initialCostPrice || "") ||
+    description !== (initialDescription || "");
+
+  const handleSave = async () => {
+    if (!name.trim() || !price.trim()) {
+      Alert.alert("Validation", "Name and Price are required");
       return;
     }
     const priceVal = parseFloat(price);
-    const costVal = costPrice ? parseFloat(costPrice) : 0;
     if (isNaN(priceVal) || priceVal <= 0) {
       Alert.alert("Validation", "Please enter a valid price");
       return;
     }
     setLoading(true);
     try {
-      await api.post(Endpoints.PRODUCTS, {
+      await api.patch(`${Endpoints.PRODUCTS}/${id}`, {
         name: name.trim(),
-        sku: sku.trim().toUpperCase(),
         price: priceVal,
-        cost_price: costVal,
+        cost_price: costPrice ? parseFloat(costPrice) : undefined,
         description: description.trim() || undefined,
       });
-      Alert.alert("Success", "Product created successfully!", [
+      Alert.alert("Success", "Product updated successfully!", [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err: any) {
       Alert.alert(
         "Error",
-        err.response?.data?.message || "Failed to create product",
+        err.response?.data?.message || "Failed to update product",
       );
     } finally {
       setLoading(false);
@@ -90,13 +106,13 @@ export default function CreateProductScreen() {
               { backgroundColor: colors.primary + "15" },
             ]}
           >
-            <Ionicons name="cube-outline" size={28} color={colors.primary} />
+            <Ionicons name="create-outline" size={28} color={colors.primary} />
           </View>
           <Text style={[styles.title, { color: colors.text }]}>
-            New Product
+            Edit Product
           </Text>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Add a new product to your catalog
+            Update the product details below
           </Text>
         </View>
 
@@ -117,14 +133,6 @@ export default function CreateProductScreen() {
             value={name}
             onChangeText={setName}
             leftIcon="cube-outline"
-          />
-          <Input
-            label="SKU *"
-            placeholder="e.g. WGT-PRO-001"
-            value={sku}
-            onChangeText={setSku}
-            autoCapitalize="characters"
-            leftIcon="barcode-outline"
           />
           <Input
             label="Selling Price (৳) *"
@@ -152,8 +160,8 @@ export default function CreateProductScreen() {
           />
         </View>
 
-        {/* Preview */}
-        {(name || price) && (
+        {/* Margin Preview */}
+        {margin !== null && !isNaN(margin) && (
           <View
             style={[
               styles.previewCard,
@@ -163,45 +171,40 @@ export default function CreateProductScreen() {
               },
             ]}
           >
-            <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
-              Preview
-            </Text>
-            <Text style={[styles.previewName, { color: colors.text }]}>
-              {name || "Product Name"}
-            </Text>
-            {sku ? (
-              <Text style={[styles.previewSku, { color: colors.textMuted }]}>
-                SKU: {sku.toUpperCase()}
+            <View style={styles.previewRow}>
+              <Text style={[styles.previewLabel, { color: colors.textMuted }]}>
+                Updated Margin
               </Text>
-            ) : null}
-            <View style={styles.previewPriceRow}>
-              {price ? (
-                <Text style={[styles.previewPrice, { color: colors.primary }]}>
-                  ৳{parseFloat(price || "0").toLocaleString()}
-                </Text>
-              ) : null}
-              {margin !== null && !isNaN(margin) && (
-                <Text
-                  style={[
-                    styles.previewMargin,
-                    { color: margin >= 0 ? colors.success : colors.danger },
-                  ]}
-                >
-                  Margin: ৳{margin.toLocaleString()}
-                </Text>
-              )}
+              <Text
+                style={[
+                  styles.previewValue,
+                  { color: margin >= 0 ? colors.success : colors.danger },
+                ]}
+              >
+                ৳{margin.toLocaleString()} (
+                {parseFloat(costPrice) > 0
+                  ? ((margin / parseFloat(costPrice)) * 100).toFixed(1)
+                  : "—"}
+                %)
+              </Text>
             </View>
           </View>
         )}
 
         <Button
-          title="Create Product"
-          onPress={handleCreate}
+          title="Save Changes"
+          onPress={handleSave}
           loading={loading}
-          disabled={!name.trim() || !sku.trim() || !price.trim()}
+          disabled={!name.trim() || !price.trim() || !hasChanges}
           size="lg"
           icon={<Ionicons name="checkmark-circle" size={18} color="#FFF" />}
         />
+
+        {!hasChanges && (
+          <Text style={[styles.noChanges, { color: colors.textMuted }]}>
+            No changes to save
+          </Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -240,36 +243,24 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderStyle: "dashed",
     marginBottom: Spacing.xl,
   },
-  previewTitle: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.medium,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: Spacing.sm,
-  },
-  previewName: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semibold,
-    marginBottom: 2,
-  },
-  previewSku: {
-    fontSize: FontSize.xs,
-    marginBottom: Spacing.sm,
-  },
-  previewPriceRow: {
+  previewRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: Spacing.lg,
   },
-  previewPrice: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-  },
-  previewMargin: {
+  previewLabel: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
+  },
+  previewValue: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  noChanges: {
+    textAlign: "center",
+    fontSize: FontSize.sm,
+    marginTop: Spacing.md,
   },
 });

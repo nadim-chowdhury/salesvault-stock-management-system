@@ -1,38 +1,129 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   useColorScheme,
+  Alert,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useAuthStore } from "../../../src/stores/auth-store";
 import {
   Colors,
   Spacing,
   FontSize,
   FontWeight,
+  BorderRadius,
+  Shadow,
 } from "../../../src/constants/theme";
-import Card from "../../../src/components/ui/Card";
 import Badge from "../../../src/components/ui/Badge";
+import Button from "../../../src/components/ui/Button";
 
 export default function ProductDetailScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
-  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "ADMIN";
+  const canEdit = isAdmin || user?.role === "MANAGER";
+
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [actionLoading, setActionLoading] = useState("");
 
-  useEffect(() => {
-    api
-      .get(`${Endpoints.PRODUCTS}/${id}`)
-      .then((res) => setProduct(res.data?.data || res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+  const fetchProduct = useCallback(async () => {
+    try {
+      const response = await api.get(`${Endpoints.PRODUCTS}/${id}`);
+      setProduct(response.data?.data || response.data);
+    } catch (err) {
+      console.error("Product fetch error:", err);
+      Alert.alert("Error", "Failed to load product");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProduct();
+    }, [fetchProduct]),
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProduct();
+  };
+
+  const handleToggleActive = () => {
+    const action = product.is_active ? "deactivate" : "activate";
+    Alert.alert(
+      `${action.charAt(0).toUpperCase() + action.slice(1)} Product`,
+      `Are you sure you want to ${action} "${product.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Confirm",
+          style: product.is_active ? "destructive" : "default",
+          onPress: async () => {
+            setActionLoading("toggle");
+            try {
+              await api.patch(`${Endpoints.PRODUCTS}/${id}`, {
+                is_active: !product.is_active,
+              });
+              setProduct({ ...product, is_active: !product.is_active });
+              Alert.alert("Success", `Product ${action}d`);
+            } catch (err: any) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || `Failed to ${action} product`,
+              );
+            } finally {
+              setActionLoading("");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Product",
+      `This will permanently deactivate "${product.name}". Continue?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setActionLoading("delete");
+            try {
+              await api.delete(`${Endpoints.PRODUCTS}/${id}`);
+              Alert.alert("Success", "Product deleted", [
+                { text: "OK", onPress: () => router.back() },
+              ]);
+            } catch (err: any) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Failed to delete product",
+              );
+            } finally {
+              setActionLoading("");
+            }
+          },
+        },
+      ],
+    );
+  };
 
   if (loading) {
     return (
@@ -45,100 +136,340 @@ export default function ProductDetailScreen() {
   if (!product) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.textMuted }}>Product not found</Text>
+        <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
+        <Text style={[styles.errorText, { color: colors.textMuted }]}>
+          Product not found
+        </Text>
       </View>
     );
   }
+
+  const sellingPrice = Number(product.price || 0);
+  const costPrice = Number(product.cost_price || 0);
+  const margin = sellingPrice - costPrice;
+  const marginPercent =
+    costPrice > 0 ? ((margin / costPrice) * 100).toFixed(1) : "—";
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+        />
+      }
     >
-      <View style={styles.header}>
+      {/* Product Hero Card */}
+      <View
+        style={[
+          styles.heroCard,
+          Shadow.md,
+          { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        ]}
+      >
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: colors.primary + "15" },
+          ]}
+        >
+          <Ionicons name="cube" size={32} color={colors.primary} />
+        </View>
         <Text style={[styles.name, { color: colors.text }]}>
           {product.name}
+        </Text>
+        <Text style={[styles.sku, { color: colors.textMuted }]}>
+          SKU: {product.sku}
         </Text>
         <Badge
           text={product.is_active ? "Active" : "Inactive"}
           variant={product.is_active ? "success" : "danger"}
         />
+        {product.description && (
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            {product.description}
+          </Text>
+        )}
       </View>
 
-      <Card style={styles.detailCard}>
-        <DetailRow label="SKU" value={product.sku} colors={colors} />
-        <DetailRow
-          label="Price"
-          value={`৳${Number(product.price || 0).toLocaleString()}`}
+      {/* Pricing Card */}
+      <View
+        style={[
+          styles.infoCard,
+          Shadow.sm,
+          { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        ]}
+      >
+        <View style={styles.sectionHeader}>
+          <Ionicons name="pricetag" size={16} color={colors.primary} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Pricing
+          </Text>
+        </View>
+
+        <View style={styles.pricingGrid}>
+          <View style={styles.pricingItem}>
+            <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
+              Selling Price
+            </Text>
+            <Text style={[styles.pricingValue, { color: colors.primary }]}>
+              ৳{sellingPrice.toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.pricingItem}>
+            <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
+              Cost Price
+            </Text>
+            <Text
+              style={[styles.pricingValue, { color: colors.textSecondary }]}
+            >
+              ৳{costPrice.toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.pricingItem}>
+            <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
+              Margin
+            </Text>
+            <Text
+              style={[
+                styles.pricingValue,
+                { color: margin >= 0 ? colors.success : colors.danger },
+              ]}
+            >
+              ৳{margin.toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.pricingItem}>
+            <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
+              Margin %
+            </Text>
+            <Text
+              style={[
+                styles.pricingValue,
+                { color: margin >= 0 ? colors.success : colors.danger },
+              ]}
+            >
+              {marginPercent}%
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Details Card */}
+      <View
+        style={[
+          styles.infoCard,
+          Shadow.sm,
+          { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        ]}
+      >
+        <View style={styles.sectionHeader}>
+          <Ionicons
+            name="information-circle"
+            size={16}
+            color={colors.primary}
+          />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Details
+          </Text>
+        </View>
+
+        <InfoRow
+          icon="calendar-outline"
+          label="Created"
+          value={new Date(product.created_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
           colors={colors}
         />
-        <DetailRow
-          label="Cost Price"
-          value={`৳${Number(product.cost_price || 0).toLocaleString()}`}
+        <InfoRow
+          icon="time-outline"
+          label="Last Updated"
+          value={new Date(product.updated_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
           colors={colors}
         />
-        {product.description && (
-          <DetailRow
-            label="Description"
-            value={product.description}
+        {product.created_by_user && (
+          <InfoRow
+            icon="person-outline"
+            label="Created By"
+            value={product.created_by_user.name || "—"}
             colors={colors}
           />
         )}
-      </Card>
+      </View>
+
+      {/* Actions */}
+      {canEdit && (
+        <View style={styles.actionsSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons
+              name="settings-outline"
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Actions
+            </Text>
+          </View>
+
+          <Button
+            title="Edit Product"
+            onPress={() =>
+              router.push({
+                pathname: "/(app)/products/edit",
+                params: {
+                  id: product.id,
+                  name: product.name,
+                  price: String(product.price),
+                  cost_price: String(product.cost_price || ""),
+                  description: product.description || "",
+                },
+              })
+            }
+            variant="primary"
+            icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
+            style={{ marginBottom: Spacing.sm }}
+          />
+
+          <Button
+            title={
+              product.is_active ? "Deactivate Product" : "Activate Product"
+            }
+            onPress={handleToggleActive}
+            variant={product.is_active ? "secondary" : "primary"}
+            loading={actionLoading === "toggle"}
+            icon={
+              <Ionicons
+                name={
+                  product.is_active
+                    ? "close-circle-outline"
+                    : "checkmark-circle-outline"
+                }
+                size={18}
+                color={product.is_active ? undefined : "#FFF"}
+              />
+            }
+            style={{ marginBottom: Spacing.sm }}
+          />
+
+          {isAdmin && (
+            <Button
+              title="Delete Product"
+              onPress={handleDelete}
+              variant="danger"
+              loading={actionLoading === "delete"}
+              icon={<Ionicons name="trash-outline" size={18} color="#FFF" />}
+            />
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 }
 
-function DetailRow({
+function InfoRow({
+  icon,
   label,
   value,
   colors,
 }: {
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
   colors: any;
 }) {
   return (
-    <View style={styles.detailRow}>
-      <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
+    <View style={styles.infoRow}>
+      <Ionicons name={icon} size={18} color={colors.textMuted} />
+      <Text style={[styles.infoLabel, { color: colors.textMuted }]}>
         {label}
       </Text>
-      <Text style={[styles.detailValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  content: { padding: Spacing.lg },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  errorText: { fontSize: FontSize.md, marginTop: Spacing.md },
+  heroCard: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    padding: Spacing["2xl"],
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
   },
   name: {
-    fontSize: FontSize["2xl"],
+    fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    flex: 1,
-    marginRight: Spacing.md,
+    marginBottom: Spacing.xs,
+    textAlign: "center",
   },
-  detailCard: { marginBottom: Spacing.lg },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#E2E8F020",
-  },
-  detailLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
-  detailValue: {
+  sku: { fontSize: FontSize.sm, marginBottom: Spacing.md },
+  description: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
-    textAlign: "right",
-    flex: 1,
-    marginLeft: Spacing.lg,
+    lineHeight: 20,
+    marginTop: Spacing.md,
+    textAlign: "center",
   },
+  infoCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  sectionTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semibold,
+  },
+  pricingGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.md,
+  },
+  pricingItem: {
+    width: "45%",
+    gap: 4,
+  },
+  pricingLabel: {
+    fontSize: FontSize.xs,
+  },
+  pricingValue: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  infoLabel: { fontSize: FontSize.sm, flex: 1 },
+  infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
+  actionsSection: { marginTop: Spacing.sm },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,34 +6,92 @@ import {
   ScrollView,
   useColorScheme,
   ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useAuthStore } from "../../../src/stores/auth-store";
 import {
   Colors,
   Spacing,
   FontSize,
   FontWeight,
   BorderRadius,
+  Shadow,
 } from "../../../src/constants/theme";
 import Card from "../../../src/components/ui/Card";
 import Badge from "../../../src/components/ui/Badge";
+import Button from "../../../src/components/ui/Button";
 
 export default function SaleDetailScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { id } = useLocalSearchParams();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "ADMIN";
+
   const [sale, setSale] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => {
-    api
-      .get(`${Endpoints.SALES}/${id}`)
-      .then((res) => setSale(res.data?.data || res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+  const fetchSale = useCallback(async () => {
+    try {
+      const res = await api.get(`${Endpoints.SALES}/${id}`);
+      setSale(res.data?.data || res.data);
+    } catch (err) {
+      console.error("Sale fetch error:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSale();
+    }, [fetchSale]),
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchSale();
+  };
+
+  const handleCancelSale = () => {
+    Alert.alert(
+      "Cancel Sale",
+      "Are you sure you want to cancel this sale? Stock will be restored to the salesperson's assignments.",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes, Cancel Sale",
+          style: "destructive",
+          onPress: async () => {
+            setCancelling(true);
+            try {
+              await api.post(`${Endpoints.SALES}/${id}/cancel`);
+              setSale({ ...sale, payment_status: "CANCELLED" });
+              Alert.alert(
+                "Success",
+                "Sale has been cancelled. Stock restored.",
+              );
+            } catch (err: any) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Failed to cancel sale",
+              );
+            } finally {
+              setCancelling(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   if (loading)
     return (
@@ -44,7 +102,10 @@ export default function SaleDetailScreen() {
   if (!sale)
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.textMuted }}>Sale not found</Text>
+        <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
+        <Text style={[styles.errorText, { color: colors.textMuted }]}>
+          Sale not found
+        </Text>
       </View>
     );
 
@@ -55,92 +116,246 @@ export default function SaleDetailScreen() {
         ? "danger"
         : "warning";
 
+  const itemCount = sale.items?.length || 0;
+  const canCancel = isAdmin && sale.payment_status !== "CANCELLED";
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+        />
+      }
     >
-      <View style={styles.header}>
+      {/* Hero */}
+      <View
+        style={[
+          styles.heroCard,
+          Shadow.md,
+          { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        ]}
+      >
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: colors.primary + "15" },
+          ]}
+        >
+          <Ionicons name="receipt" size={32} color={colors.primary} />
+        </View>
         <Text style={[styles.amount, { color: colors.text }]}>
           ৳{Number(sale.total_amount || 0).toLocaleString()}
         </Text>
         <Badge text={sale.payment_status} variant={statusVariant} />
+        <Text style={[styles.dateText, { color: colors.textMuted }]}>
+          {new Date(sale.created_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}{" "}
+          at{" "}
+          {new Date(sale.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
       </View>
 
-      <Card style={styles.card}>
-        {sale.customer_name && (
-          <DetailRow
-            label="Customer"
-            value={sale.customer_name}
-            colors={colors}
-          />
-        )}
+      {/* Customer Info */}
+      <View
+        style={[
+          styles.infoCard,
+          Shadow.sm,
+          { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        ]}
+      >
+        <View style={styles.sectionHeader}>
+          <Ionicons name="person" size={16} color={colors.primary} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Customer
+          </Text>
+        </View>
+
+        <InfoRow
+          icon="person-outline"
+          label="Name"
+          value={sale.customer_name || "Walk-in customer"}
+          colors={colors}
+        />
         {sale.customer_phone && (
-          <DetailRow
+          <InfoRow
+            icon="call-outline"
             label="Phone"
             value={sale.customer_phone}
             colors={colors}
           />
         )}
-        <DetailRow
-          label="Date"
-          value={new Date(sale.created_at).toLocaleString()}
-          colors={colors}
-        />
         {sale.notes && (
-          <DetailRow label="Notes" value={sale.notes} colors={colors} />
+          <InfoRow
+            icon="document-text-outline"
+            label="Notes"
+            value={sale.notes}
+            colors={colors}
+          />
         )}
-      </Card>
+      </View>
 
+      {/* Salesperson Info */}
+      {sale.salesperson && (
+        <View
+          style={[
+            styles.infoCard,
+            Shadow.sm,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <Ionicons name="briefcase" size={16} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Salesperson
+            </Text>
+          </View>
+          <InfoRow
+            icon="person-circle-outline"
+            label="Name"
+            value={sale.salesperson.name || "—"}
+            colors={colors}
+          />
+          {sale.salesperson.email && (
+            <InfoRow
+              icon="mail-outline"
+              label="Email"
+              value={sale.salesperson.email}
+              colors={colors}
+            />
+          )}
+        </View>
+      )}
+
+      {/* Line Items */}
       {sale.items && sale.items.length > 0 && (
-        <>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Items
-          </Text>
+        <View
+          style={[
+            styles.infoCard,
+            Shadow.sm,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <Ionicons name="cube" size={16} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Items ({itemCount})
+            </Text>
+          </View>
+
           {sale.items.map((item: any, i: number) => (
-            <Card key={i} style={styles.itemCard}>
-              <View style={styles.itemRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemName, { color: colors.text }]}>
-                    {item.product?.name || "Product"}
-                  </Text>
-                  <Text style={[styles.itemMeta, { color: colors.textMuted }]}>
-                    Qty: {item.quantity} × ৳
-                    {Number(
-                      item.price || item.unit_price || 0,
-                    ).toLocaleString()}
-                  </Text>
-                </View>
-                <Text style={[styles.itemTotal, { color: colors.primary }]}>
-                  ৳
-                  {(
-                    item.quantity * Number(item.price || item.unit_price || 0)
-                  ).toLocaleString()}
+            <View
+              key={i}
+              style={[
+                styles.itemRow,
+                i < sale.items.length - 1 && {
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.borderLight,
+                },
+              ]}
+            >
+              <View style={styles.itemInfo}>
+                <Text
+                  style={[styles.itemName, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {item.product?.name || "Product"}
+                </Text>
+                <Text style={[styles.itemMeta, { color: colors.textMuted }]}>
+                  Qty: {item.quantity} × ৳
+                  {Number(item.price || item.unit_price || 0).toLocaleString()}
                 </Text>
               </View>
-            </Card>
+              <Text style={[styles.itemTotal, { color: colors.primary }]}>
+                ৳
+                {(
+                  item.quantity * Number(item.price || item.unit_price || 0)
+                ).toLocaleString()}
+              </Text>
+            </View>
           ))}
-        </>
+
+          {/* Total */}
+          <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
+            <Text style={[styles.totalLabel, { color: colors.textMuted }]}>
+              Total
+            </Text>
+            <Text style={[styles.totalValue, { color: colors.text }]}>
+              ৳{Number(sale.total_amount || 0).toLocaleString()}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Cancel Sale Action */}
+      {canCancel && (
+        <View style={styles.actionsSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons
+              name="settings-outline"
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Actions
+            </Text>
+          </View>
+          <Button
+            title="Cancel Sale"
+            onPress={handleCancelSale}
+            variant="danger"
+            loading={cancelling}
+            icon={
+              <Ionicons name="close-circle-outline" size={18} color="#FFF" />
+            }
+          />
+          <Text style={[styles.cancelHint, { color: colors.textMuted }]}>
+            Cancelling will restore stock to the salesperson's assignments
+          </Text>
+        </View>
       )}
     </ScrollView>
   );
 }
 
-function DetailRow({
+function InfoRow({
+  icon,
   label,
   value,
   colors,
 }: {
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
   colors: any;
 }) {
   return (
-    <View style={styles.detailRow}>
-      <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
+    <View style={styles.infoRow}>
+      <Ionicons name={icon} size={18} color={colors.textMuted} />
+      <Text style={[styles.infoLabel, { color: colors.textMuted }]}>
         {label}
       </Text>
-      <Text style={[styles.detailValue, { color: colors.text }]}>{value}</Text>
+      <Text
+        style={[styles.infoValue, { color: colors.text }]}
+        numberOfLines={2}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -148,30 +363,84 @@ function DetailRow({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  content: { padding: Spacing.lg },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  errorText: { fontSize: FontSize.md, marginTop: Spacing.md },
+  content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
+  heroCard: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    padding: Spacing["2xl"],
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
   },
-  amount: { fontSize: FontSize["3xl"], fontWeight: FontWeight.bold },
-  card: { marginBottom: Spacing.xl },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
+  amount: {
+    fontSize: FontSize["3xl"],
+    fontWeight: FontWeight.bold,
+    marginBottom: Spacing.sm,
+  },
+  dateText: {
+    fontSize: FontSize.sm,
+    marginTop: Spacing.sm,
+  },
+  infoCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
   sectionTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semibold,
-    marginBottom: Spacing.md,
   },
-  itemCard: { marginBottom: Spacing.sm },
-  itemRow: { flexDirection: "row", alignItems: "center" },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  infoLabel: { fontSize: FontSize.sm, flex: 1 },
+  infoValue: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+    flex: 1,
+    textAlign: "right",
+  },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
+  itemInfo: { flex: 1 },
   itemName: { fontSize: FontSize.md, fontWeight: FontWeight.medium },
   itemMeta: { fontSize: FontSize.xs, marginTop: 2 },
   itemTotal: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  detailRow: {
+  totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: Spacing.sm,
+    alignItems: "center",
+    paddingTop: Spacing.md,
+    marginTop: Spacing.sm,
+    borderTopWidth: 1,
   },
-  detailLabel: { fontSize: FontSize.sm },
-  detailValue: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
+  totalLabel: { fontSize: FontSize.lg, fontWeight: FontWeight.medium },
+  totalValue: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
+  actionsSection: { marginTop: Spacing.sm },
+  cancelHint: {
+    fontSize: FontSize.xs,
+    textAlign: "center",
+    marginTop: Spacing.sm,
+  },
 });
