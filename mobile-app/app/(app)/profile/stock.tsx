@@ -127,7 +127,7 @@ export default function StockScreen() {
       )}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => router.push("/(app)/stock/assign")}
+        onPress={() => router.push("/(app)/profile/stock-assign")}
         activeOpacity={0.8}
       >
         <Ionicons name="arrow-forward" size={22} color="#FFF" />

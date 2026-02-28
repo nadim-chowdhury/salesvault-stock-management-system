@@ -133,7 +133,7 @@ export default function UsersListScreen() {
       )}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => router.push("/(app)/users/create")}
+        onPress={() => router.push("/(app)/profile/user-create")}
         activeOpacity={0.8}
       >
         <Ionicons name="person-add" size={22} color="#FFF" />
