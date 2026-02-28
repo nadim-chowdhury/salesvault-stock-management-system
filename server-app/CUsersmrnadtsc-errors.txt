@@ -1,0 +1,25 @@
+src/auth/auth.controller.ts(23,50): error TS1272: A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.
+src/auth/auth.controller.ts(31,59): error TS1272: A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.
+src/auth/auth.controller.ts(43,17): error TS1272: A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.
+src/auth/auth.module.ts(19,7): error TS2322: Type '(configService: ConfigService) => { secret: string | undefined; signOptions: { expiresIn: string; }; }' is not assignable to type '(...args: any[]) => JwtModuleOptions | Promise<JwtModuleOptions>'.
+  Type '{ secret: string | undefined; signOptions: { expiresIn: string; }; }' is not assignable to type 'JwtModuleOptions | Promise<JwtModuleOptions>'.
+    Type '{ secret: string | undefined; signOptions: { expiresIn: string; }; }' is not assignable to type 'JwtModuleOptions'.
+      The types of 'signOptions.expiresIn' are incompatible between these types.
+        Type 'string' is not assignable to type 'number | StringValue | undefined'.
+src/auth/auth.service.ts(261,41): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(payload: string, options?: Omit<JwtSignOptions, keyof SignOptions> | undefined): string', gave the following error.
+    Argument of type '{ sub: string; email: string; role: Role; tokenVersion: number; }' is not assignable to parameter of type 'string'.
+  Overload 2 of 3, '(payload: Buffer<ArrayBufferLike>, options?: JwtSignOptions | undefined): string', gave the following error.
+    Argument of type '{ sub: string; email: string; role: Role; tokenVersion: number; }' is not assignable to parameter of type 'Buffer<ArrayBufferLike>'.
+      Type '{ sub: string; email: string; role: Role; tokenVersion: number; }' is missing the following properties from type 'Buffer<ArrayBufferLike>': slice, subarray, write, toJSON, and 102 more.
+  Overload 3 of 3, '(payload: { sub: string; email: string; role: Role; tokenVersion: number; }, options?: JwtSignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+src/auth/strategies/jwt.strategy.ts(23,11): error TS2345: Argument of type '[{ jwtFromRequest: JwtFromRequestFunction<any>; ignoreExpiration: false; secretOrKey: string | undefined; }]' is not assignable to parameter of type '[opt: StrategyOptionsWithRequest] | [opt: StrategyOptionsWithoutRequest]'.
+  Type '[{ jwtFromRequest: JwtFromRequestFunction<any>; ignoreExpiration: false; secretOrKey: string | undefined; }]' is not assignable to type '[opt: StrategyOptionsWithoutRequest]'.
+    Type '{ jwtFromRequest: JwtFromRequestFunction<any>; ignoreExpiration: false; secretOrKey: string | undefined; }' is not assignable to type 'StrategyOptionsWithoutRequest'.
+      Type '{ jwtFromRequest: JwtFromRequestFunction<any>; ignoreExpiration: false; secretOrKey: string | undefined; }' is not assignable to type 'Omit<WithSecretOrKey, "secretOrKeyProvider"> & { passReqToCallback?: false | undefined; }'.
+        Type '{ jwtFromRequest: JwtFromRequestFunction<any>; ignoreExpiration: false; secretOrKey: string | undefined; }' is not assignable to type 'Omit<WithSecretOrKey, "secretOrKeyProvider">'.
+          Types of property 'secretOrKey' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string | Buffer<ArrayBufferLike>'.
+              Type 'undefined' is not assignable to type 'string | Buffer<ArrayBufferLike>'.
+src/sales/sales.controller.ts(33,17): error TS1272: A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.
