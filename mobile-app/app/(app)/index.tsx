@@ -8,7 +8,7 @@ import {
   useColorScheme,
   ActivityIndicator,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
 import { useAuthStore } from "../../src/stores/auth-store";
 import api from "../../src/services/api";
 import { Endpoints } from "../../src/constants/api";
@@ -133,36 +133,46 @@ export default function DashboardScreen() {
   );
 }
 
+function formatCurrency(amount: number) {
+  return amount >= 1000 ? `৳${(amount / 1000).toFixed(1)}k` : `৳${amount}`;
+}
+
 function AdminDashboard({ data, colors }: { data: any; colors: any }) {
+  const salesToday = data?.sales_today;
+  const monthlySales = data?.monthly_sales;
+  const lowStockCount = data?.low_stock_alerts?.length ?? 0;
+
   return (
     <>
       <View style={styles.statsRow}>
         <StatCard
           title="Sales Today"
-          value={data?.sales_today ?? 0}
+          value={salesToday?.count ?? 0}
           icon="trending-up"
           color={colors.success}
+          subtitle={formatCurrency(salesToday?.total_amount ?? 0)}
         />
         <View style={{ width: 12 }} />
         <StatCard
           title="Monthly"
-          value={data?.monthly_sales ?? 0}
+          value={monthlySales?.count ?? 0}
           icon="calendar"
           color={colors.primary}
+          subtitle={formatCurrency(monthlySales?.total_amount ?? 0)}
         />
       </View>
       <View style={styles.statsRow}>
         <StatCard
           title="Low Stock"
-          value={data?.low_stock_count ?? 0}
+          value={lowStockCount}
           icon="alert-circle"
-          color={data?.low_stock_count > 0 ? colors.danger : colors.success}
+          color={lowStockCount > 0 ? colors.danger : colors.success}
         />
         <View style={{ width: 12 }} />
         <StatCard
-          title="Products"
-          value={data?.total_products ?? 0}
-          icon="cube"
+          title="Top Sellers"
+          value={data?.top_salespersons?.length ?? 0}
+          icon="people"
           color={colors.info}
         />
       </View>
@@ -198,7 +208,8 @@ function AdminDashboard({ data, colors }: { data: any; colors: any }) {
                     {sp.name}
                   </Text>
                   <Text style={[styles.topValue, { color: colors.textMuted }]}>
-                    {sp.total_sales} sales
+                    {sp.sales_count} sales ·{" "}
+                    {formatCurrency(Number(sp.total_sales ?? 0))}
                   </Text>
                 </View>
               </View>
@@ -211,21 +222,26 @@ function AdminDashboard({ data, colors }: { data: any; colors: any }) {
 }
 
 function SalespersonDashboard({ data, colors }: { data: any; colors: any }) {
+  const mySalesToday = data?.my_sales_today;
+  const myStock = data?.my_stock;
+
   return (
     <>
       <View style={styles.statsRow}>
         <StatCard
           title="My Sales Today"
-          value={data?.my_sales_today ?? 0}
+          value={mySalesToday?.count ?? 0}
           icon="cart"
           color={colors.success}
+          subtitle={formatCurrency(mySalesToday?.total_amount ?? 0)}
         />
         <View style={{ width: 12 }} />
         <StatCard
           title="My Stock"
-          value={data?.my_stock_count ?? 0}
+          value={myStock?.total_remaining ?? 0}
           icon="cube"
           color={colors.primary}
+          subtitle={`${myStock?.total_assigned ?? 0} assigned`}
         />
       </View>
     </>

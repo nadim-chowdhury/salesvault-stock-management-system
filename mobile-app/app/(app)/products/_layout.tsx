@@ -1,7 +1,7 @@
 import React from "react";
 import { Stack } from "expo-router";
 import { useColorScheme } from "react-native";
-import { Colors, FontWeight, FontSize } from "../../../src/constants/theme";
+import { Colors } from "../../../src/constants/theme";
 
 export default function ProductsLayout() {
   const scheme = useColorScheme() ?? "light";
@@ -10,13 +10,7 @@ export default function ProductsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.surface },
-        headerTintColor: colors.text,
-        headerTitleStyle: {
-          fontWeight: FontWeight.semibold,
-          fontSize: FontSize.lg,
-        },
-        headerShadowVisible: false,
+        headerShown: false,
         contentStyle: { backgroundColor: colors.background },
       }}
     />

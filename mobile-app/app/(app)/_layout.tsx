@@ -60,7 +60,6 @@ export default function AppLayout() {
         name="products"
         options={{
           title: "Products",
-          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cube-outline" size={size} color={color} />
           ),
@@ -70,7 +69,6 @@ export default function AppLayout() {
         name="sales"
         options={{
           title: "Sales",
-          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" size={size} color={color} />
           ),
@@ -80,7 +78,6 @@ export default function AppLayout() {
         name="activity"
         options={{
           title: "Activity",
-          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="time-outline" size={size} color={color} />
           ),
@@ -91,7 +88,6 @@ export default function AppLayout() {
         name="profile"
         options={{
           title: "Profile",
-          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
