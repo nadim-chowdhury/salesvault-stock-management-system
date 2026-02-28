@@ -73,6 +73,10 @@ export default function ProfileLayout() {
         options={{ title: "Stock Management", headerLeft: backButton }}
       />
       <Stack.Screen
+        name="stock-add"
+        options={{ title: "Add Stock", headerLeft: backButton }}
+      />
+      <Stack.Screen
         name="stock-assign"
         options={{ title: "Assign Stock", headerLeft: backButton }}
       />
