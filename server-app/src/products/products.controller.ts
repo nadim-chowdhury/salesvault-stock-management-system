@@ -10,6 +10,12 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -19,6 +25,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '../common/enums/role.enum';
 
+@ApiTags('Products')
+@ApiBearerAuth('JWT-auth')
 @Controller('products')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductsController {
@@ -26,6 +34,10 @@ export class ProductsController {
 
   @Post()
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'Create product',
+    description: 'Add a new product to the catalog',
+  })
   async create(
     @Body() dto: CreateProductDto,
     @CurrentUser('id') userId: string,
@@ -34,6 +46,14 @@ export class ProductsController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'List products',
+    description: 'Paginated product list with search and active filter',
+  })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'is_active', required: false, type: Boolean })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -49,12 +69,14 @@ export class ProductsController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get product by ID' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.findOne(id);
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({ summary: 'Update product' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProductDto,
@@ -65,6 +87,10 @@ export class ProductsController {
 
   @Delete(':id')
   @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Soft delete product',
+    description: 'Deactivates the product (ADMIN only)',
+  })
   async softDelete(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') userId: string,

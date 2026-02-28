@@ -8,6 +8,12 @@ import {
   ParseUUIDPipe,
   Param,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { StockService } from './stock.service';
 import { AddStockDto } from './dto/add-stock.dto';
 import { AssignStockDto } from './dto/assign-stock.dto';
@@ -17,6 +23,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '../common/enums/role.enum';
 
+@ApiTags('Stock')
+@ApiBearerAuth('JWT-auth')
 @Controller('stock')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class StockController {
@@ -24,12 +32,21 @@ export class StockController {
 
   @Post('add')
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'Add stock',
+    description: 'Add stock quantity to a product in a warehouse',
+  })
   async addStock(@Body() dto: AddStockDto, @CurrentUser('id') userId: string) {
     return this.stockService.addStock(dto, userId);
   }
 
   @Post('assign')
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'Assign stock to salesperson',
+    description:
+      'Assign stock from warehouse to a salesperson. Uses pessimistic locking.',
+  })
   async assignStock(
     @Body() dto: AssignStockDto,
     @CurrentUser('id') userId: string,
@@ -39,6 +56,15 @@ export class StockController {
 
   @Get()
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'List warehouse stock',
+    description: 'View stock levels with optional low-stock threshold filter',
+  })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'warehouse_id', required: false })
+  @ApiQuery({ name: 'product_id', required: false })
+  @ApiQuery({ name: 'low_stock_threshold', required: false, type: Number })
   async getWarehouseStock(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -57,6 +83,14 @@ export class StockController {
 
   @Get('assignments')
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'List stock assignments',
+    description: 'View all stock assignments to salespersons',
+  })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'salesperson_id', required: false })
+  @ApiQuery({ name: 'product_id', required: false })
   async getAssignments(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -73,6 +107,10 @@ export class StockController {
 
   @Get('my-stock')
   @Roles(Role.SALESPERSON)
+  @ApiOperation({
+    summary: 'My assigned stock',
+    description: 'View stock assigned to the logged-in salesperson',
+  })
   async getMyStock(@CurrentUser('id') userId: string) {
     return this.stockService.getSalespersonStock(userId);
   }

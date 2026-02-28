@@ -10,6 +10,12 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { WarehousesService } from './warehouses.service';
 import { CreateWarehouseDto } from './dto/create-warehouse.dto';
 import { UpdateWarehouseDto } from './dto/update-warehouse.dto';
@@ -19,6 +25,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '../common/enums/role.enum';
 
+@ApiTags('Warehouses')
+@ApiBearerAuth('JWT-auth')
 @Controller('warehouses')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class WarehousesController {
@@ -26,6 +34,7 @@ export class WarehousesController {
 
   @Post()
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({ summary: 'Create warehouse' })
   async create(
     @Body() dto: CreateWarehouseDto,
     @CurrentUser('id') userId: string,
@@ -34,6 +43,10 @@ export class WarehousesController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List warehouses' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'is_active', required: false, type: Boolean })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -47,12 +60,14 @@ export class WarehousesController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get warehouse by ID' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.warehousesService.findOne(id);
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({ summary: 'Update warehouse' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateWarehouseDto,
@@ -63,6 +78,10 @@ export class WarehousesController {
 
   @Delete(':id')
   @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Soft delete warehouse',
+    description: 'Deactivates the warehouse (ADMIN only)',
+  })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') userId: string,

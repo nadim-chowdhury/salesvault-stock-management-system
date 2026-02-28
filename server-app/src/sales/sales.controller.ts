@@ -9,6 +9,12 @@ import {
   ParseUUIDPipe,
   Req,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -18,6 +24,8 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '../common/enums/role.enum';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
 
+@ApiTags('Sales')
+@ApiBearerAuth('JWT-auth')
 @Controller('sales')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SalesController {
@@ -25,6 +33,11 @@ export class SalesController {
 
   @Post()
   @Roles(Role.SALESPERSON, Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'Create sale',
+    description:
+      'Create a new sale transaction. Uses idempotency key to prevent double submissions. Transaction-safe with pessimistic locking.',
+  })
   async create(
     @Body() dto: CreateSaleDto,
     @CurrentUser('id') userId: string,
@@ -37,6 +50,17 @@ export class SalesController {
 
   @Get()
   @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'List all sales',
+    description:
+      'Paginated list with filters by salesperson, status, and date range',
+  })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'salesperson_id', required: false })
+  @ApiQuery({ name: 'payment_status', required: false, enum: PaymentStatus })
+  @ApiQuery({ name: 'from', required: false, description: 'ISO date string' })
+  @ApiQuery({ name: 'to', required: false, description: 'ISO date string' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -57,6 +81,12 @@ export class SalesController {
 
   @Get('my-sales')
   @Roles(Role.SALESPERSON)
+  @ApiOperation({
+    summary: 'My sales',
+    description: 'View sales made by the logged-in salesperson',
+  })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async getMySales(
     @CurrentUser('id') userId: string,
     @Query('page') page?: string,
@@ -69,12 +99,21 @@ export class SalesController {
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get sale by ID',
+    description: 'Returns full sale details with line items',
+  })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.findOne(id);
   }
 
   @Post(':id/cancel')
   @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Cancel sale',
+    description:
+      'Cancel a sale and restore stock to salesperson assignments (ADMIN only)',
+  })
   async cancel(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') adminId: string,
