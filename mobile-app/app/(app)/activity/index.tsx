@@ -374,7 +374,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
   },
-  list: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing["5xl"] },
+  list: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 100,
+    paddingTop: Spacing.md,
+  },
   card: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
