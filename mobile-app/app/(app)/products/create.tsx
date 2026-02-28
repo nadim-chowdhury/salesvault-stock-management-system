@@ -200,7 +200,6 @@ export default function CreateProductScreen() {
           loading={loading}
           disabled={!name.trim() || !sku.trim() || !price.trim()}
           size="lg"
-          icon={<Ionicons name="checkmark-circle" size={18} color="#FFF" />}
         />
       </ScrollView>
     </KeyboardAvoidingView>

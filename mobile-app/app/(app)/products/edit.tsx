@@ -197,7 +197,6 @@ export default function EditProductScreen() {
           loading={loading}
           disabled={!name.trim() || !price.trim() || !hasChanges}
           size="lg"
-          icon={<Ionicons name="checkmark-circle" size={18} color="#FFF" />}
         />
 
         {!hasChanges && (

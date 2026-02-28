@@ -166,7 +166,7 @@ export default function ProductDetailScreen() {
       <View
         style={[
           styles.heroCard,
-          Shadow.md,
+          Shadow.sm,
           { backgroundColor: colors.surface, borderColor: colors.borderLight },
         ]}
       >
