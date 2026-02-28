@@ -1,0 +1,86 @@
+# SalesVault Mobile App — Walkthrough
+
+## Summary
+Built a complete React Native Expo mobile app with **30+ files**, **8 feature modules**, role-adaptive navigation, JWT auth with secure storage, and a modern minimalist design system.
+
+**TypeScript: ✅ Zero errors** | **Metro: ✅ 1307 modules bundled**
+
+---
+
+## Architecture
+
+```
+mobile-app/
+├── app/
+│   ├── _layout.tsx              ← Root: auth guard, splash, status bar
+│   ├── (auth)/
+│   │   ├── _layout.tsx          ← Auth stack (headerless)
+│   │   └── login.tsx            ← Login (email/password, error handling)
+│   └── (app)/
+│       ├── _layout.tsx          ← Bottom tabs (role-adaptive)
+│       ├── index.tsx            ← Dashboard (admin/salesperson)
+│       ├── products/            ← List, detail, create
+│       ├── sales/               ← List, create, detail
+│       ├── activity/            ← Audit log feed
+│       ├── profile/             ← Profile, logout, admin menus
+│       ├── stock/               ← Stock levels, assign
+│       ├── warehouses/          ← Warehouse list
+│       └── users/               ← User list, create (admin)
+├── src/
+│   ├── constants/
+│   │   ├── theme.ts             ← Design tokens (colors, spacing, shadows)
+│   │   └── api.ts               ← API endpoints
+│   ├── services/
+│   │   ├── api.ts               ← Axios + JWT interceptor + refresh queue
+│   │   └── auth.ts              ← expo-secure-store token management
+│   ├── stores/
+│   │   └── auth-store.ts        ← Zustand (login, logout, initialize)
+│   └── components/ui/
+│       ├── Button.tsx            ← 4 variants, haptic, loading
+│       ├── Input.tsx             ← Label, error, password toggle
+│       ├── Card.tsx              ← Elevated surface
+│       ├── Badge.tsx             ← Status badges
+│       └── StatCard.tsx          ← Dashboard metrics
+```
+
+---
+
+## Key Features
+
+| Feature | Implementation |
+|---------|---------------|
+| **Auth Guard** | Root layout checks `isAuthenticated`, redirects to login or app |
+| **Secure Tokens** | `expo-secure-store` — encrypted on device |
+| **Auto Refresh** | 401 interceptor with queued retry (no race conditions) |
+| **Role-Adaptive Tabs** | Activity tab hidden for salesperson; Stock/Users via Profile menu |
+| **Dashboard** | Admin: stats + top salespersons + activity. Salesperson: my stats |
+| **Pull-to-Refresh** | Every list screen |
+| **Pagination** | Products, Sales, Users (load more on scroll) |
+| **Haptic Feedback** | Buttons use `expo-haptics` |
+| **Dark/Light Mode** | Full theme support via `useColorScheme()` |
+| **Idempotency** | Auto-generated key on sale creation |
+
+---
+
+## Design System
+
+| Token | Light | Dark |
+|-------|-------|------|
+| Primary | `#6366F1` | `#818CF8` |
+| Background | `#F8FAFC` | `#0F172A` |
+| Surface | `#FFFFFF` | `#1E293B` |
+| Text | `#0F172A` | `#F8FAFC` |
+
+---
+
+## How to Run
+
+```bash
+cd mobile-app
+npx expo start
+```
+
+> Scan QR with Expo Go, or press `w` for web, `a` for Android emulator.
+
+> [!IMPORTANT]
+> For physical device testing, update `API_BASE_URL` in [src/constants/api.ts](file:///c:/Users/mrnad/OneDrive/Desktop/salesvault-stock-management%20system/mobile-app/src/constants/api.ts) to your machine's IP address.
