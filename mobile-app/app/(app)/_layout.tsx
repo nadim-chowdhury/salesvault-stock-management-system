@@ -93,13 +93,6 @@ export default function AppLayout() {
           ),
         }}
       />
-      {/* Hidden routes — accessible via navigation but not as tabs */}
-      <Tabs.Screen name="stock" options={{ href: null, headerShown: false }} />
-      <Tabs.Screen
-        name="warehouses"
-        options={{ href: null, headerShown: false }}
-      />
-      <Tabs.Screen name="users" options={{ href: null, headerShown: false }} />
     </Tabs>
   );
 }

@@ -41,11 +41,12 @@ export class SalesController {
   async create(
     @Body() dto: CreateSaleDto,
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Req() req: any,
   ) {
     const ip = req.ip || req.socket?.remoteAddress;
     const deviceInfo = req.headers?.['user-agent'];
-    return this.salesService.createSale(dto, userId, ip, deviceInfo);
+    return this.salesService.createSale(dto, userId, userRole, ip, deviceInfo);
   }
 
   @Get()
@@ -108,7 +109,7 @@ export class SalesController {
   }
 
   @Post(':id/cancel')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Cancel sale',
     description:

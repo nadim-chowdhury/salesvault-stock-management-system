@@ -26,7 +26,7 @@ import {
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
 
-type PaymentFilter = "ALL" | "PAID" | "UNPAID" | "CANCELLED";
+type PaymentFilter = "ALL" | "PAID" | "PENDING" | "CANCELLED";
 type SortOption = "newest" | "oldest" | "amount_asc" | "amount_desc";
 
 export default function SalesListScreen() {
@@ -138,7 +138,7 @@ export default function SalesListScreen() {
   }[] = [
     { label: "All", value: "ALL", icon: "list-outline" },
     { label: "Paid", value: "PAID", icon: "checkmark-circle-outline" },
-    { label: "Unpaid", value: "UNPAID", icon: "time-outline" },
+    { label: "Unpaid", value: "PENDING", icon: "time-outline" },
     { label: "Cancelled", value: "CANCELLED", icon: "close-circle-outline" },
   ];
 

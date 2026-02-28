@@ -31,7 +31,7 @@ export default function SaleDetailScreen() {
   const colors = Colors[scheme];
   const { id } = useLocalSearchParams();
   const { user } = useAuthStore();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const [sale, setSale] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -320,9 +320,6 @@ export default function SaleDetailScreen() {
             onPress={handleCancelSale}
             variant="danger"
             loading={cancelling}
-            icon={
-              <Ionicons name="close-circle-outline" size={18} color="#FFF" />
-            }
           />
           <Text style={[styles.cancelHint, { color: colors.textMuted }]}>
             Cancelling will restore stock to the salesperson's assignments

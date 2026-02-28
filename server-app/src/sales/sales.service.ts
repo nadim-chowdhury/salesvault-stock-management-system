@@ -16,6 +16,7 @@ import { CreateSaleDto } from './dto/create-sale.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { ActionType } from '../common/enums/action-type.enum';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
+import { Role } from '../common/enums/role.enum';
 
 @Injectable()
 export class SalesService {
@@ -50,9 +51,13 @@ export class SalesService {
   async createSale(
     dto: CreateSaleDto,
     salespersonId: string,
+    userRole: string,
     ip?: string,
     deviceInfo?: string,
   ) {
+    const isAdminOrManager =
+      userRole === Role.ADMIN || userRole === Role.MANAGER;
+
     // Check idempotency key — prevent double submission
     const existingSale = await this.saleRepo.findOne({
       where: { idempotency_key: dto.idempotency_key },
@@ -80,39 +85,52 @@ export class SalesService {
           );
         }
 
-        // Find the salesperson's assignment for this product and lock it
-        const assignment = await manager
-          .createQueryBuilder(StockAssignment, 'sa')
-          .setLock('pessimistic_write')
-          .where('sa.salesperson_id = :salespersonId', { salespersonId })
-          .andWhere('sa.product_id = :productId', {
-            productId: item.product_id,
-          })
-          .andWhere('sa.quantity_remaining >= :quantity', {
+        if (isAdminOrManager) {
+          // ADMIN/MANAGER: sell directly from catalog, no stock assignment needed
+          const lineTotal = Number(product.price) * item.quantity;
+          totalAmount += lineTotal;
+
+          saleItems.push({
+            product_id: item.product_id,
             quantity: item.quantity,
-          })
-          .orderBy('sa.assigned_at', 'ASC') // Use oldest assignment first (FIFO)
-          .getOne();
+            unit_price: Number(product.price),
+            line_total: lineTotal,
+          });
+        } else {
+          // SALESPERSON: deduct from assigned stock with pessimistic locking
+          const assignment = await manager
+            .createQueryBuilder(StockAssignment, 'sa')
+            .setLock('pessimistic_write')
+            .where('sa.salesperson_id = :salespersonId', { salespersonId })
+            .andWhere('sa.product_id = :productId', {
+              productId: item.product_id,
+            })
+            .andWhere('sa.quantity_remaining >= :quantity', {
+              quantity: item.quantity,
+            })
+            .orderBy('sa.assigned_at', 'ASC') // Use oldest assignment first (FIFO)
+            .getOne();
 
-        if (!assignment) {
-          throw new BadRequestException(
-            `Insufficient stock for product "${product.name}" (SKU: ${product.sku}). Requested: ${item.quantity}`,
-          );
+          if (!assignment) {
+            throw new BadRequestException(
+              `Insufficient stock for product "${product.name}" (SKU: ${product.sku}). Requested: ${item.quantity}`,
+            );
+          }
+
+          // Deduct from assignment
+          assignment.quantity_remaining -= item.quantity;
+          await manager.save(assignment);
+
+          const lineTotal = Number(product.price) * item.quantity;
+          totalAmount += lineTotal;
+
+          saleItems.push({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: Number(product.price),
+            line_total: lineTotal,
+          });
         }
-
-        // Deduct from assignment
-        assignment.quantity_remaining -= item.quantity;
-        await manager.save(assignment);
-
-        const lineTotal = Number(product.price) * item.quantity;
-        totalAmount += lineTotal;
-
-        saleItems.push({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: Number(product.price),
-          line_total: lineTotal,
-        });
       }
 
       // Create the sale
@@ -155,11 +173,19 @@ export class SalesService {
 
   async cancelSale(saleId: string, adminId: string) {
     return this.dataSource.transaction(async (manager) => {
-      const sale = await manager.findOne(Sale, {
-        where: { id: saleId },
-        relations: ['items'],
-        lock: { mode: 'pessimistic_write' },
-      });
+      // Lock the sale row first (no joins — FOR UPDATE can't be used with LEFT JOIN in PostgreSQL)
+      const sale = await manager
+        .createQueryBuilder(Sale, 'sale')
+        .setLock('pessimistic_write')
+        .where('sale.id = :saleId', { saleId })
+        .getOne();
+
+      // Then load items separately
+      if (sale) {
+        sale.items = await manager.find(SaleItem, {
+          where: { sale_id: sale.id },
+        });
+      }
 
       if (!sale) {
         throw new NotFoundException('Sale not found');

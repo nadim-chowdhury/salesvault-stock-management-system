@@ -147,10 +147,9 @@ export default function CreateSaleScreen() {
     setSubmitting(true);
     try {
       await api.post(Endpoints.SALES, {
-        items: items.map(({ product_id, quantity, price }) => ({
+        items: items.map(({ product_id, quantity }) => ({
           product_id,
           quantity,
-          unit_price: price,
         })),
         customer_name: customerName.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
@@ -428,7 +427,6 @@ export default function CreateSaleScreen() {
           loading={submitting}
           disabled={items.length === 0}
           size="lg"
-          icon={<Ionicons name="checkmark-circle" size={18} color="#FFF" />}
         />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -481,7 +479,7 @@ const styles = StyleSheet.create({
   stockCard: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    padding: Spacing.md,
+    padding: Spacing.lg,
     marginBottom: Spacing.sm,
   },
   stockRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
