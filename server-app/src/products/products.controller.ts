@@ -97,4 +97,18 @@ export class ProductsController {
   ) {
     return this.productsService.softDelete(id, userId);
   }
+
+  @Delete(':id/permanent')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Hard delete product',
+    description:
+      'Permanently removes the product from the database (ADMIN only)',
+  })
+  async hardDelete(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.productsService.hardDelete(id, userId);
+  }
 }

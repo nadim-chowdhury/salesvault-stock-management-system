@@ -150,4 +150,28 @@ export class ProductsService {
 
     return { message: 'Product deactivated successfully' };
   }
+
+  async hardDelete(id: string, userId: string) {
+    const product = await this.productRepo.findOne({ where: { id } });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    await this.activityLogService.log({
+      user_id: userId,
+      action_type: ActionType.PRODUCT_DELETE,
+      entity_type: 'Product',
+      entity_id: id,
+      old_data: {
+        name: product.name,
+        sku: product.sku,
+        is_active: product.is_active,
+      },
+      new_data: null,
+    });
+
+    await this.productRepo.remove(product);
+
+    return { message: 'Product permanently deleted' };
+  }
 }
