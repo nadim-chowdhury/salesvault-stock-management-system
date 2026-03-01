@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -70,73 +71,97 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <SafeAreaView
+        style={[styles.center, { backgroundColor: colors.surface }]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.primary}
-        />
-      }
-      showsVerticalScrollIndicator={false}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
-      {/* Greeting */}
-      <View style={styles.greeting}>
-        <Text style={[styles.greetingText, { color: colors.textMuted }]}>
-          {getGreeting()},
+      {/* Header */}
+      <View
+        style={[
+          styles.dashHeader,
+          {
+            borderBottomColor: colors.borderLight,
+            backgroundColor: colors.surface,
+          },
+        ]}
+      >
+        <Text style={[styles.dashHeaderTitle, { color: colors.text }]}>
+          Dashboard
         </Text>
-        <Text style={[styles.userName, { color: colors.text }]}>
-          {user?.name || "User"}
-        </Text>
-        <Badge text={user?.role || "USER"} variant="info" />
       </View>
 
-      {isAdmin ? (
-        <AdminDashboard data={data} colors={colors} router={router} />
-      ) : (
-        <SalespersonDashboard data={data} colors={colors} router={router} />
-      )}
-
-      {/* Recent Activity */}
-      {data?.recent_activity && data.recent_activity.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Recent Activity
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Greeting */}
+        <View style={styles.greeting}>
+          <Text style={[styles.greetingText, { color: colors.textMuted }]}>
+            {getGreeting()},
           </Text>
-          {data.recent_activity.slice(0, 10).map((log: any, i: number) => (
-            <Card key={log.id || i} style={styles.activityItem}>
-              <View style={styles.activityRow}>
-                <View
-                  style={[
-                    styles.activityDot,
-                    { backgroundColor: colors.primary },
-                  ]}
-                />
-                <View style={styles.activityContent}>
-                  <Text style={[styles.activityAction, { color: colors.text }]}>
-                    {formatActionType(log.action_type)}
-                  </Text>
-                  <Text
-                    style={[styles.activityMeta, { color: colors.textMuted }]}
-                  >
-                    {log.entity_type} · {formatTimeAgo(log.created_at)}
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          ))}
+          <Text style={[styles.userName, { color: colors.text }]}>
+            {user?.name || "User"}
+          </Text>
+          <Badge text={user?.role || "USER"} variant="info" />
         </View>
-      )}
-    </ScrollView>
+
+        {isAdmin ? (
+          <AdminDashboard data={data} colors={colors} router={router} />
+        ) : (
+          <SalespersonDashboard data={data} colors={colors} router={router} />
+        )}
+
+        {/* Recent Activity */}
+        {data?.recent_activity && data.recent_activity.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Recent Activity
+            </Text>
+            {data.recent_activity.slice(0, 10).map((log: any, i: number) => (
+              <Card key={log.id || i} style={styles.activityItem}>
+                <View style={styles.activityRow}>
+                  <View
+                    style={[
+                      styles.activityDot,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  />
+                  <View style={styles.activityContent}>
+                    <Text
+                      style={[styles.activityAction, { color: colors.text }]}
+                    >
+                      {formatActionType(log.action_type)}
+                    </Text>
+                    <Text
+                      style={[styles.activityMeta, { color: colors.textMuted }]}
+                    >
+                      {log.entity_type} · {formatTimeAgo(log.created_at)}
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -313,7 +338,7 @@ function SalespersonDashboard({
         <DashMenuItem
           icon="trophy-outline"
           label="Sales Targets"
-          onPress={() => router.push("/(app)/profile/sales-targets")}
+          onPress={() => router.push("/(app)/sales/sales-targets")}
           colors={colors}
         />
       </View>
@@ -379,6 +404,15 @@ function DashMenuItem({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  dashHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  dashHeaderTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   greeting: { marginBottom: Spacing["2xl"] },
   greetingText: { fontSize: FontSize.md },

@@ -181,7 +181,7 @@ export default function SalesApprovalsScreen() {
   if (loading) {
     return (
       <SafeAreaView
-        style={[styles.center, { backgroundColor: colors.background }]}
+        style={[styles.center, { backgroundColor: colors.surface }]}
       >
         <ActivityIndicator size="large" color={colors.primary} />
       </SafeAreaView>
@@ -190,7 +190,8 @@ export default function SalesApprovalsScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
       {/* Header */}
       <View

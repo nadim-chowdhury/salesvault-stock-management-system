@@ -46,10 +46,16 @@ export default function SalesLayout() {
         }}
       />
       <Stack.Screen
-        name="approvals"
+        name="sales-approvals"
         options={{
           title: "Sale Approvals",
-          headerLeft: backButton,
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="sales-targets"
+        options={{
+          title: "Sales Targets",
           headerShown: false,
         }}
       />

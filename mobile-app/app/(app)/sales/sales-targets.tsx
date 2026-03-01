@@ -227,7 +227,7 @@ export default function SalesTargetsScreen() {
   if (loading) {
     return (
       <SafeAreaView
-        style={[styles.center, { backgroundColor: colors.background }]}
+        style={[styles.center, { backgroundColor: colors.surface }]}
       >
         <ActivityIndicator size="large" color={colors.primary} />
       </SafeAreaView>
@@ -236,7 +236,8 @@ export default function SalesTargetsScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
       {/* Header */}
       <View
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: Spacing.md,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
