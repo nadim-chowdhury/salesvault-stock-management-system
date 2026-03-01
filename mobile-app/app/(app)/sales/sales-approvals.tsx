@@ -199,50 +199,52 @@ export default function SalesApprovalsScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Sale Approvals" showBack />
 
-      {/* Filter Tabs */}
-      <View
-        style={[
-          styles.tabContainer,
-          {
-            borderBottomColor: colors.borderLight,
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[
-              styles.tab,
-              activeTab === tab.key && {
-                borderBottomColor: colors.primary,
-                borderBottomWidth: 2,
-              },
-            ]}
-            onPress={() => setActiveTab(tab.key)}
-          >
-            <Text
+      <View style={{ flex: 1, backgroundColor: colors.surface }}>
+        {/* Filter Tabs */}
+        <View
+          style={[
+            styles.tabContainer,
+            {
+              borderBottomColor: colors.borderLight,
+              backgroundColor: colors.surface,
+            },
+          ]}
+        >
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
               style={[
-                styles.tabText,
-                {
-                  color:
-                    activeTab === tab.key ? colors.primary : colors.textMuted,
-                  fontWeight:
-                    activeTab === tab.key
-                      ? FontWeight.semibold
-                      : FontWeight.regular,
+                styles.tab,
+                activeTab === tab.key && {
+                  borderBottomColor: colors.primary,
+                  borderBottomWidth: 2,
                 },
               ]}
+              onPress={() => setActiveTab(tab.key)}
             >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.tabText,
+                  {
+                    color:
+                      activeTab === tab.key ? colors.primary : colors.textMuted,
+                    fontWeight:
+                      activeTab === tab.key
+                        ? FontWeight.semibold
+                        : FontWeight.regular,
+                  },
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Sales List */}

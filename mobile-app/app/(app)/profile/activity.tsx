@@ -71,8 +71,6 @@ export default function ActivityLogScreen() {
         if (dateFrom) params.from = dateFrom;
         if (dateTo) params.to = dateTo;
         if (actionFilter !== "ALL") {
-          // The backend expects action_type enum values like SALE_CREATE, STOCK_ADD, etc.
-          // We pass partial match — the backend should filter accordingly
           params.entity_type =
             actionFilter === "LOGIN"
               ? undefined
@@ -158,7 +156,6 @@ export default function ActivityLogScreen() {
     return colors.primary;
   };
 
-  // Client-side search filter
   const filteredLogs = logs.filter((item) => {
     if (!debouncedSearch.trim()) return true;
     const q = debouncedSearch.toLowerCase();
@@ -227,132 +224,132 @@ export default function ActivityLogScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Activity" showBack />
 
-      {/* Search */}
-      <View
-        style={[
-          styles.searchBar,
-          {
-            backgroundColor: colors.surfaceSecondary,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
-        <TextInput
-          placeholder="Search activity..."
-          placeholderTextColor={colors.textMuted}
-          value={search}
-          onChangeText={setSearch}
-          style={[styles.searchInput, { color: colors.text }]}
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.surfaceSecondary,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+          <TextInput
+            placeholder="Search activity..."
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchInput, { color: colors.text }]}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.filterRow}>
+          {actionChips.map((chip) => {
+            const isActive = actionFilter === chip.value;
+            return (
+              <TouchableOpacity
+                key={chip.value}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isActive
+                      ? colors.primary
+                      : colors.surfaceSecondary,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => setActionFilter(chip.value)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={chip.icon}
+                  size={14}
+                  color={isActive ? "#FFFFFF" : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.chipText,
+                    { color: isActive ? "#FFFFFF" : colors.textSecondary },
+                  ]}
+                >
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <DateRangePicker
+          fromDate={dateFrom}
+          toDate={dateTo}
+          onApply={(from, to) => {
+            setDateFrom(from);
+            setDateTo(to);
+          }}
         />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
+
+        {loading && logs.length === 0 ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredLogs}
+            renderItem={renderLog}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+              />
+            }
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.3}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  style={{ paddingVertical: Spacing.lg }}
+                />
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons
+                  name="time-outline"
+                  size={48}
+                  color={colors.textMuted}
+                />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  {hasFilters ? "No matching activity" : "No activity yet"}
+                </Text>
+              </View>
+            }
+          />
         )}
       </View>
-
-      {/* Action Type Filter */}
-      <View style={styles.filterRow}>
-        {actionChips.map((chip) => {
-          const isActive = actionFilter === chip.value;
-          return (
-            <TouchableOpacity
-              key={chip.value}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: isActive
-                    ? colors.primary
-                    : colors.surfaceSecondary,
-                  borderColor: isActive ? colors.primary : colors.border,
-                },
-              ]}
-              onPress={() => setActionFilter(chip.value)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={chip.icon}
-                size={14}
-                color={isActive ? "#FFFFFF" : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: isActive ? "#FFFFFF" : colors.textSecondary },
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Date Range Filter */}
-      <DateRangePicker
-        fromDate={dateFrom}
-        toDate={dateTo}
-        onApply={(from, to) => {
-          setDateFrom(from);
-          setDateTo(to);
-        }}
-      />
-
-      {loading && logs.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredLogs}
-          renderItem={renderLog}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-            />
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.3}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-                style={{ paddingVertical: Spacing.lg }}
-              />
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons
-                name="time-outline"
-                size={48}
-                color={colors.textMuted}
-              />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {hasFilters ? "No matching activity" : "No activity yet"}
-              </Text>
-            </View>
-          }
-        />
-      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   searchBar: {
     flexDirection: "row",

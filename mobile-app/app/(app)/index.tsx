@@ -81,23 +81,24 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Dashboard" />
 
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.surface }]}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
         {/* Greeting */}
         <View style={styles.greeting}>
           <Text style={[styles.greetingText, { color: colors.textMuted }]}>
@@ -148,6 +149,7 @@ export default function DashboardScreen() {
           </View>
         )}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -216,6 +218,12 @@ function AdminDashboard({
           colors={colors}
         /> */}
         <DashMenuItem
+          icon="bar-chart-outline"
+          label="Daily Sales Report"
+          onPress={() => router.push("/(app)/sales/daily-sales")}
+          colors={colors}
+        />
+        <DashMenuItem
           icon="layers-outline"
           label="Stock Management"
           onPress={() => router.push("/(app)/profile/stock")}
@@ -233,6 +241,7 @@ function AdminDashboard({
           onPress={() => router.push("/(app)/sales/sales-approvals")}
           colors={colors}
         />
+
         <DashMenuItem
           icon="trophy-outline"
           label="Sales Targets"
@@ -323,6 +332,12 @@ function SalespersonDashboard({
           Quick Actions
         </Text>
         <DashMenuItem
+          icon="bar-chart-outline"
+          label="Daily Sales Report"
+          onPress={() => router.push("/(app)/sales/daily-sales")}
+          colors={colors}
+        />
+        <DashMenuItem
           icon="trophy-outline"
           label="Sales Targets"
           onPress={() => router.push("/(app)/sales/sales-targets")}
@@ -390,6 +405,7 @@ function DashMenuItem({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   greeting: { marginBottom: Spacing["2xl"] },

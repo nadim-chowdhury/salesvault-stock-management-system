@@ -207,21 +207,22 @@ export default function WarehousesScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Warehouses" />
 
-      {/* Search */}
-      <View
-        style={[
-          styles.searchBar,
-          {
-            backgroundColor: colors.surfaceSecondary,
-            borderColor: colors.border,
-          },
-        ]}
-      >
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        {/* Search */}
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.surfaceSecondary,
+              borderColor: colors.border,
+            },
+          ]}
+        >
         <Ionicons name="search-outline" size={18} color={colors.textMuted} />
         <TextInput
           placeholder="Search warehouses..."
@@ -399,12 +400,14 @@ export default function WarehousesScreen() {
           <Ionicons name="add" size={28} color="#FFF" />
         </TouchableOpacity>
       )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   searchBar: {
     flexDirection: "row",

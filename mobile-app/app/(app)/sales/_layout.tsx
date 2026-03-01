@@ -59,6 +59,13 @@ export default function SalesLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="daily-sales"
+        options={{
+          title: "Daily Sales Report",
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

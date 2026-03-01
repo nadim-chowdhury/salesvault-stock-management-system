@@ -108,6 +108,31 @@ export class SalesController {
     });
   }
 
+  @Get('daily-report')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.SALESPERSON)
+  @ApiOperation({
+    summary: 'Daily sales report',
+    description: 'Breakdown of sales by product for a specific date',
+  })
+  @ApiQuery({ name: 'date', required: false, description: 'ISO date string' })
+  @ApiQuery({ name: 'salesperson_id', required: false, description: 'Filter by salesperson (Admin/Manager only)' })
+  async getDailyReport(
+    @CurrentUser('id') currentUserId: string,
+    @CurrentUser('role') userRole: string,
+    @Query('date') date?: string,
+    @Query('salesperson_id') salespersonId?: string,
+  ) {
+    const reportDate = date ? new Date(date) : new Date();
+    
+    // For salesperson, always filter by their own ID
+    if (userRole === Role.SALESPERSON) {
+      return this.salesService.getDailyReport(reportDate, currentUserId);
+    }
+    
+    // For Admin/Manager, use optional salespersonId filter
+    return this.salesService.getDailyReport(reportDate, salespersonId);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get sale by ID',

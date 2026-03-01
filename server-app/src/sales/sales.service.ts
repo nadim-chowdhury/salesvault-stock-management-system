@@ -537,4 +537,45 @@ export class SalesService {
       salesperson_id: salespersonId,
     });
   }
+
+  async getDailyReport(date: Date, salespersonId?: string) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const qb = this.dataSource
+      .getRepository(SaleItem)
+      .createQueryBuilder('item')
+      .leftJoinAndSelect('item.product', 'product')
+      .leftJoin('item.sale', 'sale')
+      .select('product.id', 'product_id')
+      .addSelect('product.name', 'product_name')
+      .addSelect('product.sku', 'sku')
+      .addSelect('SUM(item.quantity)', 'total_quantity')
+      .addSelect('SUM(item.line_total)', 'total_amount')
+      .where('sale.created_at BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
+      })
+      .andWhere('sale.status = :status', { status: SaleStatus.APPROVED })
+      .groupBy('product.id')
+      .addGroupBy('product.name')
+      .addGroupBy('product.sku');
+
+    if (salespersonId) {
+      qb.andWhere('sale.salesperson_id = :salespersonId', { salespersonId });
+    }
+
+    const results = await qb.getRawMany();
+
+    return results.map((r) => ({
+      product_id: r.product_id,
+      product_name: r.product_name,
+      sku: r.sku,
+      total_quantity: parseInt(r.total_quantity, 10),
+      total_amount: parseFloat(r.total_amount),
+    }));
+  }
 }

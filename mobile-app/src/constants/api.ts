@@ -37,6 +37,7 @@ export const Endpoints = {
   // Sales
   SALES: "/sales",
   MY_SALES: "/sales/my-sales",
+  SALES_DAILY_REPORT: "/sales/daily-report",
 
   // Sales Targets
   SALES_TARGETS: "/sales-targets",

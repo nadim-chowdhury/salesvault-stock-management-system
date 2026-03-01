@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { Colors, Spacing, FontSize, FontWeight } from "../../constants/theme";
 
 interface PageHeaderProps {
@@ -26,25 +27,38 @@ export default function PageHeader({
   const router = useRouter();
 
   return (
-    <View
-      style={[
-        styles.header,
-        {
-          borderBottomColor: colors.borderLight,
-          backgroundColor: colors.surface,
-        },
-      ]}
-    >
-      {showBack && (
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
-      )}
+    <>
+      <StatusBar style="light" />
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.primary,
+            borderBottomColor: colors.primary,
+          },
+        ]}
+      >
+        <View style={styles.sideContainer}>
+          {showBack && (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.title, { color: "#FFFFFF" }]} numberOfLines={1}>
+          {title}
+        </Text>
 
-      {right ?? <View style={styles.sidePlaceholder} />}
-    </View>
+        <View style={[styles.sideContainer, { alignItems: "flex-end" }]}>
+          {right}
+        </View>
+      </View>
+    </>
   );
 }
 
@@ -52,17 +66,26 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    height: 64,
     borderBottomWidth: 1,
-    gap: Spacing.md,
+  },
+  sideContainer: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: -Spacing.sm,
   },
   title: {
     flex: 1,
-    fontSize: FontSize.xl,
+    fontSize: 18,
     fontWeight: FontWeight.bold,
-  },
-  sidePlaceholder: {
-    width: 28,
+    textAlign: "center",
   },
 });

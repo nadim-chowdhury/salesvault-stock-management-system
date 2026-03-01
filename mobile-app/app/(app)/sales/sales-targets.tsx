@@ -232,143 +232,154 @@ export default function SalesTargetsScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Sales Targets" showBack />
 
-      {/* Targets List */}
-      <FlatList
-        data={targets}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => {
-          const progress = getProgress(item);
-          const progressColor =
-            progress >= 1
-              ? colors.success
-              : progress >= 0.5
-                ? colors.warning
-                : colors.danger;
-          return (
-            <View
-              style={[
-                styles.targetCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                Shadow.sm,
-              ]}
-            >
-              <View style={styles.targetHeader}>
-                <View style={styles.targetInfo}>
-                  {item.salesperson && (
-                    <Text
-                      style={[styles.salespersonName, { color: colors.text }]}
-                    >
-                      {item.salesperson.name}
-                    </Text>
-                  )}
-                  {item.warehouse && (
-                    <View style={styles.warehouseTag}>
-                      <Ionicons
-                        name="business-outline"
-                        size={12}
-                        color={colors.textSecondary}
-                      />
-                      <Text
-                        style={[
-                          styles.warehouseName,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {item.warehouse.name}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                {(isAdmin || isManager) && (
-                  <TouchableOpacity onPress={() => deleteTarget(item.id)}>
-                    <Ionicons
-                      name="trash-outline"
-                      size={20}
-                      color={colors.danger}
-                    />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <View style={styles.targetAmounts}>
-                <Text style={[styles.achievedAmount, { color: progressColor }]}>
-                  {formatCurrency(item.achieved_amount)}
-                </Text>
-                <Text
-                  style={[styles.amountDivider, { color: colors.textMuted }]}
-                >
-                  {" "}
-                  /{" "}
-                </Text>
-                <Text
-                  style={[
-                    styles.targetAmountText,
-                    { color: colors.textSecondary },
-                  ]}
-                >
-                  {formatCurrency(item.target_amount)}
-                </Text>
-              </View>
-
-              {/* Progress Bar */}
+      <View style={{ flex: 1, backgroundColor: colors.surface }}>
+        {/* Targets List */}
+        <FlatList
+          data={targets}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => {
+            const progress = getProgress(item);
+            const progressColor =
+              progress >= 1
+                ? colors.success
+                : progress >= 0.5
+                  ? colors.warning
+                  : colors.danger;
+            return (
               <View
                 style={[
-                  styles.progressTrack,
-                  { backgroundColor: colors.surfaceSecondary },
+                  styles.targetCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                  Shadow.sm,
                 ]}
               >
+                <View style={styles.targetHeader}>
+                  <View style={styles.targetInfo}>
+                    {item.salesperson && (
+                      <Text
+                        style={[styles.salespersonName, { color: colors.text }]}
+                      >
+                        {item.salesperson.name}
+                      </Text>
+                    )}
+                    {item.warehouse && (
+                      <View style={styles.warehouseTag}>
+                        <Ionicons
+                          name="business-outline"
+                          size={12}
+                          color={colors.textSecondary}
+                        />
+                        <Text
+                          style={[
+                            styles.warehouseName,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {item.warehouse.name}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  {(isAdmin || isManager) && (
+                    <TouchableOpacity onPress={() => deleteTarget(item.id)}>
+                      <Ionicons
+                        name="trash-outline"
+                        size={20}
+                        color={colors.danger}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <View style={styles.targetAmounts}>
+                  <Text
+                    style={[styles.achievedAmount, { color: progressColor }]}
+                  >
+                    {formatCurrency(item.achieved_amount)}
+                  </Text>
+                  <Text
+                    style={[styles.amountDivider, { color: colors.textMuted }]}
+                  >
+                    {" "}
+                    /{" "}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.targetAmountText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {formatCurrency(item.target_amount)}
+                  </Text>
+                </View>
+
+                {/* Progress Bar */}
                 <View
                   style={[
-                    styles.progressFill,
-                    {
-                      backgroundColor: progressColor,
-                      width: `${Math.round(progress * 100)}%`,
-                    },
+                    styles.progressTrack,
+                    { backgroundColor: colors.surfaceSecondary },
                   ]}
-                />
-              </View>
-
-              <View style={styles.targetFooter}>
-                <Text style={[styles.periodText, { color: colors.textMuted }]}>
-                  {formatDate(item.period_start)} –{" "}
-                  {formatDate(item.period_end)}
-                </Text>
-                <Text
-                  style={[styles.progressPercent, { color: progressColor }]}
                 >
-                  {Math.round(progress * 100)}%
-                </Text>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        backgroundColor: progressColor,
+                        width: `${Math.round(progress * 100)}%`,
+                      },
+                    ]}
+                  />
+                </View>
+
+                <View style={styles.targetFooter}>
+                  <Text
+                    style={[styles.periodText, { color: colors.textMuted }]}
+                  >
+                    {formatDate(item.period_start)} –{" "}
+                    {formatDate(item.period_end)}
+                  </Text>
+                  <Text
+                    style={[styles.progressPercent, { color: progressColor }]}
+                  >
+                    {Math.round(progress * 100)}%
+                  </Text>
+                </View>
               </View>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="trophy-outline"
+                size={48}
+                color={colors.textMuted}
+              />
+              <Text
+                style={[styles.emptyTitle, { color: colors.textSecondary }]}
+              >
+                No Sales Targets
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                {isSalesperson
+                  ? "No targets have been assigned to you yet"
+                  : "Create targets to track salesperson performance"}
+              </Text>
             </View>
-          );
-        }}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons
-              name="trophy-outline"
-              size={48}
-              color={colors.textMuted}
-            />
-            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
-              No Sales Targets
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-              {isSalesperson
-                ? "No targets have been assigned to you yet"
-                : "Create targets to track salesperson performance"}
-            </Text>
-          </View>
-        }
-      />
+          }
+        />
+      </View>
 
       {/* Create Target Modal */}
       <Modal visible={showCreateModal} animationType="slide" transparent>

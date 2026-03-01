@@ -40,12 +40,12 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Profile" />
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.surface }]}
         contentContainerStyle={styles.content}
       >
         {/* User Info */}
@@ -107,6 +107,12 @@ export default function ProfileScreen() {
           icon="trophy-outline"
           label="Sales Targets"
           onPress={() => router.push("/(app)/sales/sales-targets")}
+          colors={colors}
+        />
+        <MenuItem
+          icon="bar-chart-outline"
+          label="Daily Sales Report"
+          onPress={() => router.push("/(app)/sales/daily-sales")}
           colors={colors}
         />
         {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
