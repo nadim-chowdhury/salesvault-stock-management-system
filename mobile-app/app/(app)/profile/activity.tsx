@@ -230,7 +230,7 @@ export default function ActivityLogScreen() {
       style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
-      <PageHeader title="Activity" />
+      <PageHeader title="Activity" showBack />
 
       {/* Search */}
       <View

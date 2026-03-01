@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { useColorScheme } from "react-native";
 import { Colors } from "../../../src/constants/theme";
 
-export default function ActivityLayout() {
+export default function WarehousesLayout() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
 

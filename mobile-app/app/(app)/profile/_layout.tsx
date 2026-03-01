@@ -69,14 +69,6 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="warehouses"
-        options={{
-          title: "Warehouses",
-          headerLeft: backButton,
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
         name="warehouse-create"
         options={{
           title: "Create Warehouse",
@@ -136,6 +128,14 @@ export default function ProfileLayout() {
         name="sales-targets"
         options={{
           title: "Sales Targets",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="activity"
+        options={{
+          title: "Activity Log",
           headerLeft: backButton,
           headerShown: false,
         }}

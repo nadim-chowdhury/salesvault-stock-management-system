@@ -212,7 +212,7 @@ function AdminDashboard({
         <DashMenuItem
           icon="business-outline"
           label="Warehouses"
-          onPress={() => router.push("/(app)/profile/warehouses")}
+          onPress={() => router.push("/(app)/warehouses/" as any)}
           colors={colors}
         />
         <DashMenuItem

@@ -210,7 +210,7 @@ export default function WarehousesScreen() {
       style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
-      <PageHeader title="Warehouses" showBack />
+      <PageHeader title="Warehouses" />
 
       {/* Search */}
       <View

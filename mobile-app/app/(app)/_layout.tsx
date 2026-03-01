@@ -90,15 +90,21 @@ export default function AppLayout() {
         })}
       />
       <Tabs.Screen
-        name="activity"
+        name="warehouses"
         options={{
-          title: "Activity",
+          title: "Warehouses",
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time-outline" size={size} color={color} />
+            <Ionicons name="business-outline" size={size} color={color} />
           ),
           href: isAdmin ? undefined : null, // Hide for salesperson
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("warehouses", { screen: "index" });
+          },
+        })}
       />
       <Tabs.Screen
         name="profile"

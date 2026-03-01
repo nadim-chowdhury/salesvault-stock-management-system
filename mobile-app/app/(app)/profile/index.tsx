@@ -80,7 +80,7 @@ export default function ProfileScreen() {
             <MenuItem
               icon="business-outline"
               label="Warehouses"
-              onPress={() => router.push("/(app)/profile/warehouses")}
+              onPress={() => router.push("/(app)/warehouses/" as any)}
               colors={colors}
             />
             <MenuItem
@@ -109,6 +109,14 @@ export default function ProfileScreen() {
           onPress={() => router.push("/(app)/sales/sales-targets")}
           colors={colors}
         />
+        {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
+          <MenuItem
+            icon="time-outline"
+            label="Activity Log"
+            onPress={() => router.push("/(app)/profile/activity")}
+            colors={colors}
+          />
+        )}
 
         <View style={styles.logoutSection}>
           <Button
