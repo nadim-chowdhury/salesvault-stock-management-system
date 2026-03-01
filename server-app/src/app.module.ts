@@ -13,6 +13,8 @@ import { StockModule } from './stock/stock.module';
 import { SalesModule } from './sales/sales.module';
 import { ActivityLogModule } from './activity-log/activity-log.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { WarehouseUsersModule } from './warehouse-users/warehouse-users.module';
+import { SalesTargetsModule } from './sales-targets/sales-targets.module';
 
 // App
 import { AppController } from './app.controller';
@@ -71,6 +73,8 @@ import { AppService } from './app.service';
     StockModule,
     SalesModule,
     DashboardModule,
+    WarehouseUsersModule,
+    SalesTargetsModule,
   ],
   controllers: [AppController],
   providers: [

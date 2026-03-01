@@ -75,13 +75,31 @@ export default function ProfileScreen() {
             colors={colors}
           />
           <MenuItem
+            icon="people-circle-outline"
+            label="Warehouse Users"
+            onPress={() => router.push("/(app)/profile/warehouse-users")}
+            colors={colors}
+          />
+          <MenuItem
             icon="layers-outline"
             label="Stock Management"
             onPress={() => router.push("/(app)/profile/stock")}
             colors={colors}
           />
+          <MenuItem
+            icon="checkmark-done-outline"
+            label="Sale Approvals"
+            onPress={() => router.push("/(app)/sales/approvals")}
+            colors={colors}
+          />
         </>
       )}
+      <MenuItem
+        icon="trophy-outline"
+        label="Sales Targets"
+        onPress={() => router.push("/(app)/profile/sales-targets")}
+        colors={colors}
+      />
 
       <View style={styles.logoutSection}>
         <Button

@@ -33,6 +33,10 @@ export class CreateSaleDto {
   @IsNotEmpty()
   idempotency_key: string;
 
+  @IsUUID()
+  @IsOptional()
+  warehouse_id?: string;
+
   @IsString()
   @IsOptional()
   @MaxLength(500)

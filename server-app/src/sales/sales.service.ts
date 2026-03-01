@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
@@ -12,10 +11,13 @@ import { Sale } from '../entities/sale.entity';
 import { SaleItem } from '../entities/sale-item.entity';
 import { StockAssignment } from '../entities/stock-assignment.entity';
 import { Product } from '../entities/product.entity';
+import { WarehouseUser } from '../entities/warehouse-user.entity';
+import { User } from '../entities/user.entity';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { ActionType } from '../common/enums/action-type.enum';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
+import { SaleStatus } from '../common/enums/sale-status.enum';
 import { Role } from '../common/enums/role.enum';
 
 @Injectable()
@@ -29,6 +31,10 @@ export class SalesService {
     private readonly assignmentRepo: Repository<StockAssignment>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+    @InjectRepository(WarehouseUser)
+    private readonly warehouseUserRepo: Repository<WarehouseUser>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     private readonly dataSource: DataSource,
     private readonly activityLogService: ActivityLogService,
   ) {}
@@ -37,11 +43,12 @@ export class SalesService {
    * Transaction-Safe Sale Creation:
    * BEGIN
    *   Check idempotency key
+   *   Validate warehouse assignment for salesperson
    *   For each item:
    *     SELECT stock_assignment FOR UPDATE
    *     Validate quantity
    *     Deduct quantity_remaining
-   *   Insert sale
+   *   Insert sale (status = PENDING_APPROVAL)
    *   Insert sale_items
    *   Insert activity log
    * COMMIT
@@ -68,6 +75,35 @@ export class SalesService {
         `Duplicate sale attempt with idempotency_key: ${dto.idempotency_key}`,
       );
       return existingSale; // Return the existing sale instead of creating a duplicate
+    }
+
+    // For salesperson, validate warehouse assignment
+    let warehouseId = dto.warehouse_id;
+    if (!isAdminOrManager) {
+      if (!warehouseId) {
+        // Auto-detect if salesperson is assigned to exactly one warehouse
+        const assignments = await this.warehouseUserRepo.find({
+          where: { user_id: salespersonId },
+        });
+        if (assignments.length === 1) {
+          warehouseId = assignments[0].warehouse_id;
+        } else if (assignments.length > 1) {
+          throw new BadRequestException(
+            'You are assigned to multiple warehouses. Please specify warehouse_id.',
+          );
+        }
+        // If 0 assignments, proceed without warehouse (backward compatible)
+      } else {
+        // Validate salesperson is assigned to this warehouse
+        const isAssigned = await this.warehouseUserRepo.count({
+          where: { user_id: salespersonId, warehouse_id: warehouseId },
+        });
+        if (!isAssigned) {
+          throw new ForbiddenException(
+            'You are not assigned to this warehouse',
+          );
+        }
+      }
     }
 
     return this.dataSource.transaction(async (manager) => {
@@ -105,6 +141,9 @@ export class SalesService {
             .andWhere('sa.product_id = :productId', {
               productId: item.product_id,
             })
+            .andWhere('sa.warehouse_id = :warehouseId', {
+              warehouseId,
+            })
             .andWhere('sa.quantity_remaining >= :quantity', {
               quantity: item.quantity,
             })
@@ -133,17 +172,27 @@ export class SalesService {
         }
       }
 
+      // Determine status — admin/manager sales are auto-approved
+      const saleStatus = isAdminOrManager
+        ? SaleStatus.APPROVED
+        : SaleStatus.PENDING_APPROVAL;
+
       // Create the sale
-      const sale = manager.create(Sale, {
+      const saleData: Partial<Sale> = {
         salesperson_id: salespersonId,
+        warehouse_id: warehouseId || undefined,
         total_amount: totalAmount,
         payment_status: PaymentStatus.PENDING,
+        status: saleStatus,
         idempotency_key: dto.idempotency_key,
         notes: dto.notes,
         customer_name: dto.customer_name,
         customer_phone: dto.customer_phone,
+        approved_by: isAdminOrManager ? salespersonId : undefined,
+        approved_at: isAdminOrManager ? new Date() : undefined,
         items: saleItems.map((item) => manager.create(SaleItem, item)),
-      });
+      };
+      const sale = manager.create(Sale, saleData);
 
       const saved = await manager.save(sale);
 
@@ -158,22 +207,182 @@ export class SalesService {
           items_count: saleItems.length,
           idempotency_key: dto.idempotency_key,
           customer_name: dto.customer_name,
+          warehouse_id: warehouseId,
+          status: saleStatus,
         },
         ip_address: ip,
         device_info: deviceInfo,
       });
 
       this.logger.log(
-        `Sale created: ${saved.id} by ${salespersonId}, total: ${totalAmount}`,
+        `Sale created: ${saved.id} by ${salespersonId}, total: ${totalAmount}, status: ${saleStatus}`,
       );
 
       return saved;
     });
   }
 
+  async approveSale(saleId: string, managerId: string) {
+    const sale = await this.saleRepo.findOne({
+      where: { id: saleId },
+      relations: ['items'],
+    });
+
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
+
+    if (sale.status !== SaleStatus.PENDING_APPROVAL) {
+      throw new BadRequestException(
+        `Sale cannot be approved. Current status: ${sale.status}`,
+      );
+    }
+
+    sale.status = SaleStatus.APPROVED;
+    sale.approved_by = managerId;
+    sale.approved_at = new Date();
+    await this.saleRepo.save(sale);
+
+    await this.activityLogService.log({
+      user_id: managerId,
+      action_type: ActionType.SALE_APPROVE,
+      entity_type: 'Sale',
+      entity_id: saleId,
+      new_data: {
+        status: SaleStatus.APPROVED,
+        approved_by: managerId,
+        total_amount: sale.total_amount,
+      },
+    });
+
+    return sale;
+  }
+
+  async rejectSale(saleId: string, managerId: string, reason?: string) {
+    return this.dataSource.transaction(async (manager) => {
+      const sale = await manager.findOne(Sale, {
+        where: { id: saleId },
+      });
+
+      if (!sale) {
+        throw new NotFoundException('Sale not found');
+      }
+
+      if (sale.status !== SaleStatus.PENDING_APPROVAL) {
+        throw new BadRequestException(
+          `Sale cannot be rejected. Current status: ${sale.status}`,
+        );
+      }
+
+      // Load items separately
+      sale.items = await manager.find(SaleItem, {
+        where: { sale_id: sale.id },
+      });
+
+      // Restore stock to salesperson assignments
+      for (const item of sale.items) {
+        const assignment = await manager
+          .createQueryBuilder(StockAssignment, 'sa')
+          .setLock('pessimistic_write')
+          .where('sa.salesperson_id = :salespersonId', {
+            salespersonId: sale.salesperson_id,
+          })
+          .andWhere('sa.product_id = :productId', {
+            productId: item.product_id,
+          })
+          .andWhere('sa.warehouse_id = :warehouseId', {
+            warehouseId: sale.warehouse_id,
+          })
+          .orderBy('sa.assigned_at', 'ASC')
+          .getOne();
+
+        if (assignment) {
+          assignment.quantity_remaining += item.quantity;
+          await manager.save(assignment);
+        }
+      }
+
+      sale.status = SaleStatus.REJECTED;
+      sale.approved_by = managerId;
+      sale.approved_at = new Date();
+      if (reason) {
+        sale.notes = sale.notes
+          ? `${sale.notes}\n[REJECTED]: ${reason}`
+          : `[REJECTED]: ${reason}`;
+      }
+      await manager.save(sale);
+
+      await this.activityLogService.log({
+        user_id: managerId,
+        action_type: ActionType.SALE_REJECT,
+        entity_type: 'Sale',
+        entity_id: saleId,
+        new_data: {
+          status: SaleStatus.REJECTED,
+          rejected_by: managerId,
+          reason,
+        },
+      });
+
+      return { message: 'Sale rejected and stock restored' };
+    });
+  }
+
+  async assignSale(saleId: string, salespersonId: string, managerId: string) {
+    const sale = await this.saleRepo.findOne({ where: { id: saleId } });
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
+
+    // Validate salesperson exists
+    const salesperson = await this.userRepo.findOne({
+      where: {
+        id: salespersonId,
+        role: Role.SALESPERSON,
+        is_active: true,
+      },
+    });
+    if (!salesperson) {
+      throw new NotFoundException('Salesperson not found or inactive');
+    }
+
+    // If sale has a warehouse, validate salesperson is assigned to it
+    if (sale.warehouse_id) {
+      const isAssigned = await this.warehouseUserRepo.count({
+        where: {
+          user_id: salespersonId,
+          warehouse_id: sale.warehouse_id,
+        },
+      });
+      if (!isAssigned) {
+        throw new BadRequestException(
+          'Salesperson is not assigned to the sale warehouse',
+        );
+      }
+    }
+
+    const oldAssignee = sale.assigned_to;
+    sale.assigned_to = salespersonId;
+    await this.saleRepo.save(sale);
+
+    await this.activityLogService.log({
+      user_id: managerId,
+      action_type: ActionType.SALE_ASSIGN,
+      entity_type: 'Sale',
+      entity_id: saleId,
+      old_data: { assigned_to: oldAssignee },
+      new_data: {
+        assigned_to: salespersonId,
+        salesperson_name: salesperson.name,
+      },
+    });
+
+    return sale;
+  }
+
   async cancelSale(saleId: string, adminId: string) {
     return this.dataSource.transaction(async (manager) => {
-      // Lock the sale row first (no joins — FOR UPDATE can't be used with LEFT JOIN in PostgreSQL)
+      // Lock the sale row first
       const sale = await manager
         .createQueryBuilder(Sale, 'sale')
         .setLock('pessimistic_write')
@@ -241,6 +450,8 @@ export class SalesService {
     limit?: number;
     salesperson_id?: string;
     payment_status?: PaymentStatus;
+    status?: SaleStatus;
+    warehouse_id?: string;
     from?: Date;
     to?: Date;
   }) {
@@ -252,6 +463,7 @@ export class SalesService {
       .leftJoinAndSelect('sale.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('sale.salesperson', 'salesperson')
+      .leftJoinAndSelect('sale.warehouse', 'warehouse')
       .orderBy('sale.created_at', 'DESC');
 
     if (options.salesperson_id) {
@@ -262,6 +474,16 @@ export class SalesService {
     if (options.payment_status) {
       qb.andWhere('sale.payment_status = :payment_status', {
         payment_status: options.payment_status,
+      });
+    }
+    if (options.status) {
+      qb.andWhere('sale.status = :status', {
+        status: options.status,
+      });
+    }
+    if (options.warehouse_id) {
+      qb.andWhere('sale.warehouse_id = :warehouse_id', {
+        warehouse_id: options.warehouse_id,
       });
     }
     if (options.from) {
@@ -293,7 +515,14 @@ export class SalesService {
   async findOne(id: string) {
     const sale = await this.saleRepo.findOne({
       where: { id },
-      relations: ['items', 'items.product', 'salesperson'],
+      relations: [
+        'items',
+        'items.product',
+        'salesperson',
+        'warehouse',
+        'approvedByUser',
+        'assignedToUser',
+      ],
     });
     if (!sale) throw new NotFoundException('Sale not found');
     return sale;

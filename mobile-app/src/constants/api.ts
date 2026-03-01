@@ -22,6 +22,11 @@ export const Endpoints = {
   // Warehouses
   WAREHOUSES: "/warehouses",
 
+  // Warehouse Users
+  WAREHOUSE_USERS: "/warehouse-users",
+  WAREHOUSE_USERS_ASSIGN: "/warehouse-users/assign",
+  WAREHOUSE_USERS_MY: "/warehouse-users/my-warehouses",
+
   // Stock
   STOCK: "/stock",
   STOCK_ADD: "/stock/add",
@@ -32,6 +37,10 @@ export const Endpoints = {
   // Sales
   SALES: "/sales",
   MY_SALES: "/sales/my-sales",
+
+  // Sales Targets
+  SALES_TARGETS: "/sales-targets",
+  SALES_TARGETS_MY: "/sales-targets/my-targets",
 
   // Activity Logs
   ACTIVITY_LOGS: "/activity-logs",

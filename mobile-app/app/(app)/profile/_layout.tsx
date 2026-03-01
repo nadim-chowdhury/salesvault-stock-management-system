@@ -124,6 +124,22 @@ export default function ProfileLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="warehouse-users"
+        options={{
+          title: "Warehouse Users",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="sales-targets"
+        options={{
+          title: "Sales Targets",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

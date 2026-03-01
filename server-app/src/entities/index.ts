@@ -7,3 +7,5 @@ export { Sale } from './sale.entity';
 export { SaleItem } from './sale-item.entity';
 export { ActivityLog } from './activity-log.entity';
 export { RefreshToken } from './refresh-token.entity';
+export { WarehouseUser } from './warehouse-user.entity';
+export { SalesTarget } from './sales-target.entity';

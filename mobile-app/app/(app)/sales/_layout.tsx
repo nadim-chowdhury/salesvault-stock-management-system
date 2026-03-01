@@ -45,6 +45,14 @@ export default function SalesLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="approvals"
+        options={{
+          title: "Sale Approvals",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
