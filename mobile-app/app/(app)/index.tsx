@@ -209,22 +209,22 @@ function AdminDashboard({
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Quick Actions
         </Text>
-        <DashMenuItem
+        {/* <DashMenuItem
           icon="business-outline"
           label="Warehouses"
           onPress={() => router.push("/(app)/warehouses/" as any)}
+          colors={colors}
+        /> */}
+        <DashMenuItem
+          icon="layers-outline"
+          label="Stock Management"
+          onPress={() => router.push("/(app)/profile/stock")}
           colors={colors}
         />
         <DashMenuItem
           icon="people-circle-outline"
           label="Warehouse Users"
           onPress={() => router.push("/(app)/profile/warehouse-users")}
-          colors={colors}
-        />
-        <DashMenuItem
-          icon="layers-outline"
-          label="Stock Management"
-          onPress={() => router.push("/(app)/profile/stock")}
           colors={colors}
         />
         <DashMenuItem

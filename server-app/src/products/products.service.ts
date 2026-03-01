@@ -58,6 +58,10 @@ export class ProductsService {
 
     const qb = this.productRepo
       .createQueryBuilder('product')
+      .leftJoin('stock', 'stock', 'stock.product_id = product.id')
+      .select('product')
+      .addSelect('COALESCE(SUM(stock.quantity), 0)', 'total_stock')
+      .groupBy('product.id')
       .orderBy('product.created_at', 'DESC');
 
     if (options.search) {
@@ -72,10 +76,17 @@ export class ProductsService {
     }
 
     const total = await qb.getCount();
-    const data = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany();
+    const rawData = await qb
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getRawAndEntities();
+
+    const data = rawData.entities.map((entity, index) => {
+      return {
+        ...entity,
+        total_stock: parseInt(rawData.raw[index].total_stock, 10),
+      };
+    });
 
     return {
       data,

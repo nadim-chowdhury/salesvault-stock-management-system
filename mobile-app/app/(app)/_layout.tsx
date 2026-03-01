@@ -74,22 +74,6 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="sales"
-        options={{
-          title: "Sales",
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" size={size} color={color} />
-          ),
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate("sales", { screen: "index" });
-          },
-        })}
-      />
-      <Tabs.Screen
         name="warehouses"
         options={{
           title: "Warehouses",
@@ -106,6 +90,23 @@ export default function AppLayout() {
           },
         })}
       />
+      <Tabs.Screen
+        name="sales"
+        options={{
+          title: "Sales",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="receipt-outline" size={size} color={color} />
+          ),
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("sales", { screen: "index" });
+          },
+        })}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{

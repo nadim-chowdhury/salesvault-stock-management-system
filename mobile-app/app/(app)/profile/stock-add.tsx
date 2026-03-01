@@ -214,11 +214,21 @@ export default function AddStockScreen() {
                   <Text style={[styles.dropdownText, { color: colors.text }]}>
                     {p.name}
                   </Text>
-                  <Text
-                    style={[styles.dropdownMeta, { color: colors.textMuted }]}
-                  >
-                    SKU: {p.sku || "—"}
-                  </Text>
+                  <View style={styles.dropdownMetaRow}>
+                    <Text
+                      style={[styles.dropdownMeta, { color: colors.textMuted }]}
+                    >
+                      SKU: {p.sku || "—"}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dropdownStock,
+                        { color: p.total_stock > 0 ? colors.success : colors.danger },
+                      ]}
+                    >
+                      Stock: {p.total_stock || 0}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))}
               {products.length === 0 && (
@@ -437,7 +447,14 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   dropdownText: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
-  dropdownMeta: { fontSize: FontSize.xs, marginTop: 2 },
+  dropdownMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  dropdownMeta: { fontSize: FontSize.xs },
+  dropdownStock: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   dropdownEmpty: {
     padding: Spacing.lg,
     textAlign: "center",

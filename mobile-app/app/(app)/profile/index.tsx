@@ -77,12 +77,12 @@ export default function ProfileScreen() {
         )}
         {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
           <>
-            <MenuItem
+            {/* <MenuItem
               icon="business-outline"
               label="Warehouses"
               onPress={() => router.push("/(app)/warehouses/" as any)}
               colors={colors}
-            />
+            /> */}
             <MenuItem
               icon="people-circle-outline"
               label="Warehouse Users"
