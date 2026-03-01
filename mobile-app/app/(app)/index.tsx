@@ -28,6 +28,7 @@ import {
 import Card from "../../src/components/ui/Card";
 import StatCard from "../../src/components/ui/StatCard";
 import Badge from "../../src/components/ui/Badge";
+import PageHeader from "../../src/components/ui/PageHeader";
 
 export default function DashboardScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -35,7 +36,6 @@ export default function DashboardScreen() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
-  const isSalesperson = user?.role === "SALESPERSON";
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -84,23 +84,10 @@ export default function DashboardScreen() {
       style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
-      {/* Header */}
-      <View
-        style={[
-          styles.dashHeader,
-          {
-            borderBottomColor: colors.borderLight,
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        <Text style={[styles.dashHeaderTitle, { color: colors.text }]}>
-          Dashboard
-        </Text>
-      </View>
+      <PageHeader title="Dashboard" />
 
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={[styles.container, { backgroundColor: colors.surface }]}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
@@ -404,15 +391,6 @@ function DashMenuItem({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  dashHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-  },
-  dashHeaderTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   greeting: { marginBottom: Spacing["2xl"] },
   greetingText: { fontSize: FontSize.md },

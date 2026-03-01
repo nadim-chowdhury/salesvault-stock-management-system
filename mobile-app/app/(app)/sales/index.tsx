@@ -10,8 +10,8 @@ import {
   useColorScheme,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
@@ -26,6 +26,7 @@ import {
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
 import DateRangePicker from "../../../src/components/ui/DateRangePicker";
+import PageHeader from "../../../src/components/ui/PageHeader";
 
 type PaymentFilter = "ALL" | "PAID" | "PENDING" | "CANCELLED";
 type SortOption = "newest" | "oldest" | "amount_asc" | "amount_desc";
@@ -269,7 +270,12 @@ export default function SalesListScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
+    >
+      <PageHeader title="Sales" />
+
       {/* Search */}
       <View
         style={[
@@ -474,7 +480,7 @@ export default function SalesListScreen() {
       >
         <Ionicons name="add" size={28} color="#FFF" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

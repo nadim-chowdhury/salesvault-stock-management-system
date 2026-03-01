@@ -219,7 +219,7 @@ export default function WarehouseUsersScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       edges={["top"]}
     >
       {/* Header */}

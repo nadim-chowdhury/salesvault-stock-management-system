@@ -10,6 +10,7 @@ import {
   useColorScheme,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
@@ -23,6 +24,7 @@ import {
   Shadow,
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
+import PageHeader from "../../../src/components/ui/PageHeader";
 
 type RoleFilter = "ALL" | "ADMIN" | "MANAGER" | "SALESPERSON";
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
@@ -223,107 +225,154 @@ export default function UsersListScreen() {
     roleFilter !== "ALL" || statusFilter !== "ALL" || search.length > 0;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Search */}
-      <View
-        style={[
-          styles.searchBar,
-          {
-            backgroundColor: colors.surfaceSecondary,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
-        <TextInput
-          placeholder="Search users..."
-          placeholderTextColor={colors.textMuted}
-          value={search}
-          onChangeText={setSearch}
-          style={[styles.searchInput, { color: colors.text }]}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
+      <PageHeader title="User Management" showBack />
 
-      {/* Role Filter + Sort Row */}
-      <View style={styles.filterRow}>
-        {roleChips.map((chip) => {
-          const isActive = roleFilter === chip.value;
-          return (
-            <TouchableOpacity
-              key={chip.value}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: isActive
-                    ? colors.primary
-                    : colors.surfaceSecondary,
-                  borderColor: isActive ? colors.primary : colors.border,
-                },
-              ]}
-              onPress={() => setRoleFilter(chip.value)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={chip.icon}
-                size={14}
-                color={isActive ? "#FFFFFF" : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: isActive ? "#FFFFFF" : colors.textSecondary },
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-        <View style={styles.chipSpacer} />
-        <TouchableOpacity
+      <View style={{ flex: 1 }}>
+        {/* Search */}
+        <View
           style={[
-            styles.sortBtn,
+            styles.searchBar,
             {
-              backgroundColor: showSort
-                ? colors.primary
-                : colors.surfaceSecondary,
-              borderColor: showSort ? colors.primary : colors.border,
+              backgroundColor: colors.surfaceSecondary,
+              borderColor: colors.border,
             },
           ]}
-          onPress={() => setShowSort(!showSort)}
-          activeOpacity={0.7}
         >
-          <Ionicons
-            name="swap-vertical-outline"
-            size={14}
-            color={showSort ? "#FFF" : colors.textSecondary}
+          <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+          <TextInput
+            placeholder="Search users..."
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchInput, { color: colors.text }]}
           />
-          <Text
-            style={[
-              styles.chipText,
-              { color: showSort ? "#FFF" : colors.textSecondary },
-            ]}
-          >
-            Sort
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Sort Options */}
-      {showSort && (
-        <View style={styles.sortRow}>
-          {sortOptions.map((opt) => {
-            const isActive = sortBy === opt.value;
+        {/* Role Filter + Sort Row */}
+        <View style={styles.filterRow}>
+          {roleChips.map((chip) => {
+            const isActive = roleFilter === chip.value;
             return (
               <TouchableOpacity
-                key={opt.value}
+                key={chip.value}
                 style={[
-                  styles.sortChip,
+                  styles.chip,
+                  {
+                    backgroundColor: isActive
+                      ? colors.primary
+                      : colors.surfaceSecondary,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => setRoleFilter(chip.value)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={chip.icon}
+                  size={14}
+                  color={isActive ? "#FFFFFF" : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.chipText,
+                    { color: isActive ? "#FFFFFF" : colors.textSecondary },
+                  ]}
+                >
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          <View style={styles.chipSpacer} />
+          <TouchableOpacity
+            style={[
+              styles.sortBtn,
+              {
+                backgroundColor: showSort
+                  ? colors.primary
+                  : colors.surfaceSecondary,
+                borderColor: showSort ? colors.primary : colors.border,
+              },
+            ]}
+            onPress={() => setShowSort(!showSort)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="swap-vertical-outline"
+              size={14}
+              color={showSort ? "#FFF" : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.chipText,
+                { color: showSort ? "#FFF" : colors.textSecondary },
+              ]}
+            >
+              Sort
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Sort Options */}
+        {showSort && (
+          <View style={styles.sortRow}>
+            {sortOptions.map((opt) => {
+              const isActive = sortBy === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.sortChip,
+                    {
+                      backgroundColor: isActive
+                        ? colors.primary + "15"
+                        : colors.surfaceSecondary,
+                      borderColor: isActive ? colors.primary : colors.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    setSortBy(opt.value);
+                    setShowSort(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={opt.icon}
+                    size={12}
+                    color={isActive ? colors.primary : colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.sortChipText,
+                      { color: isActive ? colors.primary : colors.textSecondary },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Status Filter Row */}
+        <View style={styles.statusRow}>
+          {statusChips.map((chip) => {
+            const isActive = statusFilter === chip.value;
+            return (
+              <TouchableOpacity
+                key={chip.value}
+                style={[
+                  styles.statusChip,
                   {
                     backgroundColor: isActive
                       ? colors.primary + "15"
@@ -331,127 +380,87 @@ export default function UsersListScreen() {
                     borderColor: isActive ? colors.primary : colors.border,
                   },
                 ]}
-                onPress={() => {
-                  setSortBy(opt.value);
-                  setShowSort(false);
-                }}
+                onPress={() => setStatusFilter(chip.value)}
                 activeOpacity={0.7}
               >
                 <Ionicons
-                  name={opt.icon}
+                  name={chip.icon}
                   size={12}
                   color={isActive ? colors.primary : colors.textMuted}
                 />
                 <Text
                   style={[
-                    styles.sortChipText,
+                    styles.statusChipText,
                     { color: isActive ? colors.primary : colors.textSecondary },
                   ]}
                 >
-                  {opt.label}
+                  {chip.label}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
-      )}
 
-      {/* Status Filter Row */}
-      <View style={styles.statusRow}>
-        {statusChips.map((chip) => {
-          const isActive = statusFilter === chip.value;
-          return (
-            <TouchableOpacity
-              key={chip.value}
-              style={[
-                styles.statusChip,
-                {
-                  backgroundColor: isActive
-                    ? colors.primary + "15"
-                    : colors.surfaceSecondary,
-                  borderColor: isActive ? colors.primary : colors.border,
-                },
-              ]}
-              onPress={() => setStatusFilter(chip.value)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={chip.icon}
-                size={12}
-                color={isActive ? colors.primary : colors.textMuted}
+        {loading && users.length === 0 ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={sortedUsers}
+            renderItem={renderUser}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
               />
-              <Text
-                style={[
-                  styles.statusChipText,
-                  { color: isActive ? colors.primary : colors.textSecondary },
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {loading && users.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={sortedUsers}
-          renderItem={renderUser}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-            />
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.3}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-                style={{ paddingVertical: Spacing.lg }}
-              />
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons
-                name="people-outline"
-                size={48}
-                color={colors.textMuted}
-              />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {hasFilters ? "No matching users" : "No users found"}
-              </Text>
-              {!hasFilters && (
-                <Text
-                  style={[styles.emptySubtext, { color: colors.textMuted }]}
-                >
-                  Tap + to create your first user
+            }
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.3}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  style={{ paddingVertical: Spacing.lg }}
+                />
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons
+                  name="people-outline"
+                  size={48}
+                  color={colors.textMuted}
+                />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  {hasFilters ? "No matching users" : "No users found"}
                 </Text>
-              )}
-            </View>
-          }
-        />
-      )}
+                {!hasFilters && (
+                  <Text
+                    style={[styles.emptySubtext, { color: colors.textMuted }]}
+                  >
+                    Tap + to create your first user
+                  </Text>
+                )}
+              </View>
+            }
+          />
+        )}
 
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => router.push("/(app)/profile/user-create")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="person-add" size={22} color="#FFF" />
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={() => router.push("/(app)/profile/user-create")}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="person-add" size={22} color="#FFF" />
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 

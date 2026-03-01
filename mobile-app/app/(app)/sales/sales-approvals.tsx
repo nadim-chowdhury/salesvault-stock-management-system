@@ -23,6 +23,7 @@ import {
   FontWeight,
   Shadow,
 } from "../../../src/constants/theme";
+import PageHeader from "../../../src/components/ui/PageHeader";
 
 interface Sale {
   id: string;
@@ -193,24 +194,7 @@ export default function SalesApprovalsScreen() {
       style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            borderBottomColor: colors.borderLight,
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Sale Approvals
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <PageHeader title="Sale Approvals" showBack />
 
       {/* Filter Tabs */}
       <View
@@ -399,15 +383,6 @@ export default function SalesApprovalsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-  },
-  headerTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   tabContainer: {
     flexDirection: "row",
     borderBottomWidth: 1,

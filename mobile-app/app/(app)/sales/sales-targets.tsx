@@ -14,7 +14,6 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
@@ -27,6 +26,7 @@ import {
   FontWeight,
   Shadow,
 } from "../../../src/constants/theme";
+import PageHeader from "../../../src/components/ui/PageHeader";
 
 interface SalesTarget {
   id: string;
@@ -45,17 +45,9 @@ interface Warehouse {
   name: string;
 }
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
-
 export default function SalesTargetsScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
-  const router = useRouter();
   const { user: currentUser } = useAuthStore();
 
   const [targets, setTargets] = useState<SalesTarget[]>([]);
@@ -239,24 +231,7 @@ export default function SalesTargetsScreen() {
       style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            borderBottomColor: colors.borderLight,
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Sales Targets
-        </Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <PageHeader title="Sales Targets" showBack />
 
       {/* Targets List */}
       <FlatList
@@ -617,15 +592,6 @@ export default function SalesTargetsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-  },
-  headerTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   fab: {
     position: "absolute",
     bottom: 24,

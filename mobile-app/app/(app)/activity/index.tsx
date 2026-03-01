@@ -10,6 +10,7 @@ import {
   useColorScheme,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
@@ -22,6 +23,7 @@ import {
   Shadow,
 } from "../../../src/constants/theme";
 import DateRangePicker from "../../../src/components/ui/DateRangePicker";
+import PageHeader from "../../../src/components/ui/PageHeader";
 
 type ActionFilter = "ALL" | "LOGIN" | "SALE" | "STOCK" | "PRODUCT" | "USER";
 
@@ -215,7 +217,12 @@ export default function ActivityLogScreen() {
     actionFilter !== "ALL" || dateFrom || dateTo || search.length > 0;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
+    >
+      <PageHeader title="Activity" />
+
       {/* Search */}
       <View
         style={[
@@ -331,7 +338,7 @@ export default function ActivityLogScreen() {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

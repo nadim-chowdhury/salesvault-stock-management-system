@@ -8,6 +8,7 @@ import {
   Alert,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../../src/stores/auth-store";
@@ -21,6 +22,7 @@ import {
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
 import Button from "../../../src/components/ui/Button";
+import PageHeader from "../../../src/components/ui/PageHeader";
 
 export default function ProfileScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -37,83 +39,91 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
-      {/* User Info */}
-      <View style={styles.profileHeader}>
-        <View
-          style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}
-        >
-          <Text style={[styles.avatarText, { color: colors.primary }]}>
-            {(user?.name || "U").charAt(0).toUpperCase()}
+      <PageHeader title="Profile" />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        {/* User Info */}
+        <View style={styles.profileHeader}>
+          <View
+            style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}
+          >
+            <Text style={[styles.avatarText, { color: colors.primary }]}>
+              {(user?.name || "U").charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <Text style={[styles.name, { color: colors.text }]}>
+            {user?.name}
           </Text>
+          <Text style={[styles.email, { color: colors.textMuted }]}>
+            {user?.email}
+          </Text>
+          <Badge text={user?.role || "USER"} variant="info" />
         </View>
-        <Text style={[styles.name, { color: colors.text }]}>{user?.name}</Text>
-        <Text style={[styles.email, { color: colors.textMuted }]}>
-          {user?.email}
-        </Text>
-        <Badge text={user?.role || "USER"} variant="info" />
-      </View>
 
-      {/* Menu Items */}
-      {isAdmin && (
+        {/* Menu Items */}
+        {isAdmin && (
+          <MenuItem
+            icon="people-outline"
+            label="User Management"
+            onPress={() => router.push("/(app)/profile/users")}
+            colors={colors}
+          />
+        )}
+        {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
+          <>
+            <MenuItem
+              icon="business-outline"
+              label="Warehouses"
+              onPress={() => router.push("/(app)/profile/warehouses")}
+              colors={colors}
+            />
+            <MenuItem
+              icon="people-circle-outline"
+              label="Warehouse Users"
+              onPress={() => router.push("/(app)/profile/warehouse-users")}
+              colors={colors}
+            />
+            <MenuItem
+              icon="layers-outline"
+              label="Stock Management"
+              onPress={() => router.push("/(app)/profile/stock")}
+              colors={colors}
+            />
+            <MenuItem
+              icon="checkmark-done-outline"
+              label="Sale Approvals"
+              onPress={() => router.push("/(app)/sales/sales-approvals")}
+              colors={colors}
+            />
+          </>
+        )}
         <MenuItem
-          icon="people-outline"
-          label="User Management"
-          onPress={() => router.push("/(app)/profile/users")}
+          icon="trophy-outline"
+          label="Sales Targets"
+          onPress={() => router.push("/(app)/sales/sales-targets")}
           colors={colors}
         />
-      )}
-      {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
-        <>
-          <MenuItem
-            icon="business-outline"
-            label="Warehouses"
-            onPress={() => router.push("/(app)/profile/warehouses")}
-            colors={colors}
-          />
-          <MenuItem
-            icon="people-circle-outline"
-            label="Warehouse Users"
-            onPress={() => router.push("/(app)/profile/warehouse-users")}
-            colors={colors}
-          />
-          <MenuItem
-            icon="layers-outline"
-            label="Stock Management"
-            onPress={() => router.push("/(app)/profile/stock")}
-            colors={colors}
-          />
-          <MenuItem
-            icon="checkmark-done-outline"
-            label="Sale Approvals"
-            onPress={() => router.push("/(app)/sales/sales-approvals")}
-            colors={colors}
-          />
-        </>
-      )}
-      <MenuItem
-        icon="trophy-outline"
-        label="Sales Targets"
-        onPress={() => router.push("/(app)/sales/sales-targets")}
-        colors={colors}
-      />
 
-      <View style={styles.logoutSection}>
-        <Button
-          title="Sign Out"
-          onPress={handleLogout}
-          variant="danger"
-          icon={<Ionicons name="log-out-outline" size={18} color="#FFF" />}
-        />
-      </View>
+        <View style={styles.logoutSection}>
+          <Button
+            title="Sign Out"
+            onPress={handleLogout}
+            variant="danger"
+            icon={<Ionicons name="log-out-outline" size={18} color="#FFF" />}
+          />
+        </View>
 
-      <Text style={[styles.version, { color: colors.textMuted }]}>
-        SalesVault v1.0.0
-      </Text>
-    </ScrollView>
+        <Text style={[styles.version, { color: colors.textMuted }]}>
+          SalesVault v1.0.0
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
