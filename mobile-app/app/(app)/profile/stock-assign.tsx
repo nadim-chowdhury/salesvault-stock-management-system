@@ -6,8 +6,6 @@ import {
   ScrollView,
   useColorScheme,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";

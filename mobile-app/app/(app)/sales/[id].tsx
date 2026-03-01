@@ -22,9 +22,10 @@ import {
   BorderRadius,
   Shadow,
 } from "../../../src/constants/theme";
-import Card from "../../../src/components/ui/Card";
 import Badge from "../../../src/components/ui/Badge";
 import Button from "../../../src/components/ui/Button";
+import PageHeader from "@/src/components/ui/PageHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SaleDetailScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -120,17 +121,24 @@ export default function SaleDetailScreen() {
   const canCancel = isAdmin && sale.payment_status !== "CANCELLED";
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.primary}
-        />
-      }
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
+    
+      <PageHeader title="Sale Details" showBack />
+
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.surface }]}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
+      >
       {/* Hero */}
       <View
         style={[
@@ -322,11 +330,12 @@ export default function SaleDetailScreen() {
             loading={cancelling}
           />
           <Text style={[styles.cancelHint, { color: colors.textMuted }]}>
-            Cancelling will restore stock to the salesperson's assignments
+            Cancelling will restore stock to the salesperson&apos;s assignments
           </Text>
         </View>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
