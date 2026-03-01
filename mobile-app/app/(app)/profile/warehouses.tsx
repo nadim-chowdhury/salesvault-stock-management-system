@@ -34,7 +34,7 @@ export default function WarehousesScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const canCreate = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -63,6 +63,13 @@ export default function WarehousesScreen() {
 
   const fetchWarehouses = useCallback(
     async (pageNum = 1, isRefresh = false) => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setWarehouses([]);
+        return;
+      }
       try {
         const params: any = { page: pageNum, limit: 20 };
         if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
@@ -90,7 +97,7 @@ export default function WarehousesScreen() {
         setLoadingMore(false);
       }
     },
-    [debouncedSearch, filterStatus],
+    [isAuthenticated, debouncedSearch, filterStatus],
   );
 
   useFocusEffect(

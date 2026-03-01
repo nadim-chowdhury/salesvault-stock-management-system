@@ -48,7 +48,7 @@ interface Warehouse {
 export default function SalesTargetsScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, isAuthenticated } = useAuthStore();
 
   const [targets, setTargets] = useState<SalesTarget[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +70,10 @@ export default function SalesTargetsScreen() {
   const isSalesperson = currentUser?.role === "SALESPERSON";
 
   const fetchTargets = useCallback(async () => {
+    if (!isAuthenticated) {
+      setTargets([]);
+      return;
+    }
     try {
       const endpoint = isSalesperson
         ? Endpoints.SALES_TARGETS_MY
@@ -85,7 +89,7 @@ export default function SalesTargetsScreen() {
     } catch {
       Alert.alert("Error", "Failed to load sales targets");
     }
-  }, [isSalesperson]);
+  }, [isAuthenticated, isSalesperson]);
 
   const fetchWarehouses = useCallback(async () => {
     try {

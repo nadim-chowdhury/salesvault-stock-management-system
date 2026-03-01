@@ -32,7 +32,7 @@ export default function ProductDetailScreen() {
   const colors = Colors[scheme];
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const isAdmin = user?.role === "ADMIN";
   const canEdit = isAdmin || user?.role === "MANAGER";
 
@@ -42,6 +42,12 @@ export default function ProductDetailScreen() {
   const [actionLoading, setActionLoading] = useState("");
 
   const fetchProduct = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      setRefreshing(false);
+      setProduct(null);
+      return;
+    }
     try {
       const response = await api.get(`${Endpoints.PRODUCTS}/${id}`);
       setProduct(response.data?.data || response.data);
@@ -52,7 +58,7 @@ export default function ProductDetailScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [id]);
+  }, [isAuthenticated, id]);
 
   useFocusEffect(
     useCallback(() => {

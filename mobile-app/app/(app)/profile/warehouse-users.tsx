@@ -59,7 +59,7 @@ export default function WarehouseUsersScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, isAuthenticated } = useAuthStore();
 
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(
@@ -76,6 +76,10 @@ export default function WarehouseUsersScreen() {
   const isManager = currentUser?.role === "MANAGER";
 
   const fetchWarehouses = useCallback(async () => {
+    if (!isAuthenticated) {
+      setWarehouses([]);
+      return;
+    }
     try {
       const res = await api.get(Endpoints.WAREHOUSES, {
         params: { is_active: true, limit: 100 },
@@ -87,7 +91,7 @@ export default function WarehouseUsersScreen() {
     } catch {
       Alert.alert("Error", "Failed to load warehouses");
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchAssignedUsers = useCallback(async (warehouseId: string) => {
     try {

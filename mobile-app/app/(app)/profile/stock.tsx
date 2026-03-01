@@ -9,6 +9,9 @@ import {
   RefreshControl,
   useColorScheme,
   ActivityIndicator,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +28,7 @@ import {
 import Badge from "../../../src/components/ui/Badge";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PageHeader from "@/src/components/ui/PageHeader";
+import { useAuthStore } from "../../../src/stores/auth-store";
 
 type TabType = "warehouse" | "assignments";
 type StockSort =
@@ -39,6 +43,7 @@ export default function StockScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
 
   const [tab, setTab] = useState<TabType>("warehouse");
   const [stocks, setStocks] = useState<any[]>([]);
@@ -56,6 +61,16 @@ export default function StockScreen() {
   const [showSort, setShowSort] = useState(false);
   const [stockFilter, setStockFilter] = useState<StockFilter>("ALL");
 
+  // Enable smooth layout transitions on Android
+  useEffect(() => {
+    if (
+      Platform.OS === "android" &&
+      UIManager.setLayoutAnimationEnabledExperimental
+    ) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
+
   // Debounce search input — 400ms delay
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -68,6 +83,10 @@ export default function StockScreen() {
   }, [search]);
 
   const fetchWarehouseStock = useCallback(async () => {
+    if (!isAuthenticated) {
+      setStocks([]);
+      return;
+    }
     try {
       const response = await api.get(Endpoints.STOCK, {
         params: { page: 1, limit: 100 },
@@ -79,9 +98,13 @@ export default function StockScreen() {
     } catch (err) {
       console.error("Stock fetch error:", err);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchAssignments = useCallback(async () => {
+    if (!isAuthenticated) {
+      setAssignments([]);
+      return;
+    }
     try {
       const response = await api.get(Endpoints.STOCK_ASSIGNMENTS, {
         params: { page: 1, limit: 100 },
@@ -93,7 +116,7 @@ export default function StockScreen() {
     } catch (err) {
       console.error("Assignments fetch error:", err);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -115,6 +138,7 @@ export default function StockScreen() {
 
   // Reset search/sort/filter when switching tabs
   const handleTabSwitch = (newTab: TabType) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setTab(newTab);
     setSearch("");
     setDebouncedSearch("");

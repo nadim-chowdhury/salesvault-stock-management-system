@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useAuthStore } from "../../../src/stores/auth-store";
 import {
   Colors,
   Spacing,
@@ -47,6 +48,7 @@ export default function SalesApprovalsScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +57,12 @@ export default function SalesApprovalsScreen() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchSales = useCallback(async () => {
+    if (!isAuthenticated) {
+      setSales([]);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
       const params: any = { limit: 50 };
       if (activeTab !== "ALL") {
@@ -68,7 +76,7 @@ export default function SalesApprovalsScreen() {
     } catch {
       Alert.alert("Error", "Failed to load sales");
     }
-  }, [activeTab]);
+  }, [isAuthenticated, activeTab]);
 
   useEffect(() => {
     const load = async () => {

@@ -39,7 +39,7 @@ export default function ProductsListScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const canCreate = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const [products, setProducts] = useState<any[]>([]);
@@ -68,6 +68,13 @@ export default function ProductsListScreen() {
 
   const fetchProducts = useCallback(
     async (pageNum = 1, isRefresh = false) => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setProducts([]);
+        return;
+      }
       try {
         const params: any = { page: pageNum, limit: 20 };
         if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
@@ -95,7 +102,7 @@ export default function ProductsListScreen() {
         setLoadingMore(false);
       }
     },
-    [debouncedSearch, filterStatus],
+    [isAuthenticated, debouncedSearch, filterStatus],
   );
 
   // Re-fetch when screen comes into focus (returning from create/edit/detail)

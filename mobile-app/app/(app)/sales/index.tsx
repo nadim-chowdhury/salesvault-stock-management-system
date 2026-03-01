@@ -35,7 +35,7 @@ export default function SalesListScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const [sales, setSales] = useState<any[]>([]);
@@ -66,6 +66,13 @@ export default function SalesListScreen() {
 
   const fetchSales = useCallback(
     async (pageNum = 1, isRefresh = false) => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setSales([]);
+        return;
+      }
       try {
         const endpoint = isAdmin ? Endpoints.SALES : Endpoints.MY_SALES;
         const params: any = { page: pageNum, limit: 20 };
@@ -98,7 +105,7 @@ export default function SalesListScreen() {
         setLoadingMore(false);
       }
     },
-    [isAdmin, paymentFilter, debouncedSearch, dateFrom, dateTo],
+    [isAdmin, isAuthenticated, paymentFilter, debouncedSearch, dateFrom, dateTo],
   );
 
   // Re-fetch when screen comes into focus

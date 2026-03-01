@@ -61,8 +61,8 @@ export default function CreateSaleScreen() {
       const normalized = products.map((p: any) => ({
         product_id: p.id,
         product: { id: p.id, name: p.name, price: p.price },
-        quantity: 999,
-        quantity_remaining: 999,
+        quantity: 0,
+        quantity_remaining: 0,
       }));
       setMyStock(normalized);
     } catch (err) {
@@ -72,6 +72,24 @@ export default function CreateSaleScreen() {
     }
   }, []);
 
+  const fetchAdminStock = useCallback(async () => {
+    try {
+      const res = await api.get(Endpoints.STOCK, {
+        params: { page: 1, limit: 100 },
+      });
+      const result = res.data?.data || res.data;
+      const stockItems =
+        result?.data || result?.items || (Array.isArray(result) ? result : []);
+      setMyStock(stockItems);
+    } catch (err) {
+      console.error("Admin stock fetch error:", err);
+      // Fallback to product catalog if stock endpoint is unavailable
+      await fetchProducts();
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchProducts]);
+
   useEffect(() => {
     // Wait for user to be loaded from the auth store
     if (!user) return;
@@ -79,8 +97,8 @@ export default function CreateSaleScreen() {
     setLoading(true);
 
     if (isAdminOrManager) {
-      // ADMIN/MANAGER: fetch all active products from catalog
-      fetchProducts();
+      // ADMIN/MANAGER: use warehouse stock so available quantity is accurate
+      fetchAdminStock();
     } else {
       // SALESPERSON: fetch assigned stock, fallback to products on 403
       api
@@ -100,7 +118,7 @@ export default function CreateSaleScreen() {
           }
         });
     }
-  }, [user, isAdminOrManager, fetchProducts]);
+  }, [user, isAdminOrManager, fetchProducts, fetchAdminStock]);
 
   const addItem = (stock: any) => {
     const pid = stock.product_id || stock.product?.id;

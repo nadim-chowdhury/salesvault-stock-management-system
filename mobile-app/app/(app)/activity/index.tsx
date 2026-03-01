@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useAuthStore } from "../../../src/stores/auth-store";
 import {
   Colors,
   Spacing,
@@ -30,6 +31,7 @@ type ActionFilter = "ALL" | "LOGIN" | "SALE" | "STOCK" | "PRODUCT" | "USER";
 export default function ActivityLogScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
+  const { isAuthenticated } = useAuthStore();
 
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,13 @@ export default function ActivityLogScreen() {
 
   const fetchLogs = useCallback(
     async (pageNum = 1, isRefresh = false) => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setLogs([]);
+        return;
+      }
       try {
         const params: any = { page: pageNum, limit: 30 };
         if (dateFrom) params.from = dateFrom;
@@ -94,7 +103,7 @@ export default function ActivityLogScreen() {
         setLoadingMore(false);
       }
     },
-    [dateFrom, dateTo, actionFilter],
+    [isAuthenticated, dateFrom, dateTo, actionFilter],
   );
 
   useEffect(() => {

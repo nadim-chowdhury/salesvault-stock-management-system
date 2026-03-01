@@ -31,7 +31,7 @@ export default function SaleDetailScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { id } = useLocalSearchParams();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const [sale, setSale] = useState<any>(null);
@@ -40,6 +40,12 @@ export default function SaleDetailScreen() {
   const [cancelling, setCancelling] = useState(false);
 
   const fetchSale = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      setRefreshing(false);
+      setSale(null);
+      return;
+    }
     try {
       const res = await api.get(`${Endpoints.SALES}/${id}`);
       setSale(res.data?.data || res.data);
@@ -49,7 +55,7 @@ export default function SaleDetailScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [id]);
+  }, [isAuthenticated, id]);
 
   useFocusEffect(
     useCallback(() => {
