@@ -142,7 +142,7 @@ export default function DateRangePicker({
     value: Preset;
     icon: keyof typeof Ionicons.glyphMap;
   }[] = [
-    { label: "All", value: "all", icon: "infinite-outline" },
+    { label: "All", value: "all", icon: "ellipse-outline" },
     { label: "Today", value: "today", icon: "today-outline" },
     { label: "7 Days", value: "7d", icon: "calendar-outline" },
     { label: "30 Days", value: "30d", icon: "calendar-outline" },

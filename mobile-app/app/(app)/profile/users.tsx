@@ -509,6 +509,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.sm,
+    paddingTop: Spacing.sm,
     gap: Spacing.xs,
   },
   statusChip: {
