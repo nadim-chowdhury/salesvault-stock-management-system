@@ -226,12 +226,12 @@ export default function UsersListScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="User Management" showBack />
 
-      <View style={{ flex: 1 }}>
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         {/* Search */}
         <View
           style={[
@@ -466,6 +466,7 @@ export default function UsersListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   searchBar: {
     flexDirection: "row",

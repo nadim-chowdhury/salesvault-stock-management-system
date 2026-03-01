@@ -27,6 +27,8 @@ import {
   Shadow,
 } from "../../../src/constants/theme";
 
+import PageHeader from "@/src/components/ui/PageHeader";
+
 interface WarehouseUser {
   id: string;
   warehouse_id: string;
@@ -223,74 +225,63 @@ export default function WarehouseUsersScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            borderBottomColor: colors.borderLight,
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Warehouse Users
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <PageHeader title="Warehouse Users" showBack />
 
-      {/* Warehouse Selector */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.warehouseScroller}
-        contentContainerStyle={styles.warehouseScrollContent}
-      >
-        {warehouses.map((w) => (
-          <TouchableOpacity
-            key={w.id}
-            style={[
-              styles.warehouseChip,
-              {
-                backgroundColor:
-                  selectedWarehouse?.id === w.id
-                    ? colors.primary
-                    : colors.surface,
-                borderColor:
-                  selectedWarehouse?.id === w.id
-                    ? colors.primary
-                    : colors.border,
-              },
-            ]}
-            onPress={() => setSelectedWarehouse(w)}
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        {/* Warehouse Selector */}
+        <View style={{ height: 56 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.warehouseScroller}
+            contentContainerStyle={styles.warehouseScrollContent}
           >
-            <Ionicons
-              name="business-outline"
-              size={16}
-              color={
-                selectedWarehouse?.id === w.id ? "#FFF" : colors.textSecondary
-              }
-            />
-            <Text
-              style={[
-                styles.warehouseChipText,
-                {
-                  color: selectedWarehouse?.id === w.id ? "#FFF" : colors.text,
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {w.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            {warehouses.map((w) => (
+              <TouchableOpacity
+                key={w.id}
+                style={[
+                  styles.warehouseChip,
+                  {
+                    backgroundColor:
+                      selectedWarehouse?.id === w.id
+                        ? colors.primary
+                        : colors.surface,
+                    borderColor:
+                      selectedWarehouse?.id === w.id
+                        ? colors.primary
+                        : colors.border,
+                  },
+                ]}
+                onPress={() => setSelectedWarehouse(w)}
+              >
+                <Ionicons
+                  name="business-outline"
+                  size={16}
+                  color={
+                    selectedWarehouse?.id === w.id
+                      ? "#FFF"
+                      : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.warehouseChipText,
+                    {
+                      color:
+                        selectedWarehouse?.id === w.id ? "#FFF" : colors.text,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {w.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
       {!selectedWarehouse ? (
         <View style={styles.emptyState}>
@@ -533,25 +524,15 @@ export default function WarehouseUsersScreen() {
           <Ionicons name="person-add" size={26} color="#FFF" />
         </TouchableOpacity>
       )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-  },
   warehouseScroller: {
     maxHeight: 56,
   },

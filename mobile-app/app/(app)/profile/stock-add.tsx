@@ -118,35 +118,38 @@ export default function AddStockScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Add Stock" showBack />
 
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.surface }]}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: colors.primary + "15" },
-            ]}
-          >
-            <Ionicons
-              name="add-circle-outline"
-              size={28}
-              color={colors.primary}
-            />
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.headerSection}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons
+                name="add-circle-outline"
+                size={28}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Add Stock
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              Add inventory to a warehouse
+            </Text>
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>Add Stock</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Add inventory to a warehouse
-          </Text>
-        </View>
 
         {/* Product Picker */}
         <View style={styles.sectionWrapper}>
@@ -394,12 +397,14 @@ export default function AddStockScreen() {
           size="lg"
         />
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   headerSection: { alignItems: "center", marginBottom: Spacing["2xl"] },

@@ -384,244 +384,253 @@ export default function StockScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Stock" showBack />
 
-      {/* Tabs */}
-      <View
-        style={[
-          styles.tabBar,
-          { backgroundColor: colors.surface, borderColor: colors.borderLight },
-        ]}
-      >
-        {tabs.map((t) => {
-          const isActive = tab === t.key;
-          return (
-            <TouchableOpacity
-              key={t.key}
-              style={[
-                styles.tab,
-                isActive && {
-                  borderBottomColor: colors.primary,
-                  borderBottomWidth: 2,
-                },
-              ]}
-              onPress={() => handleTabSwitch(t.key)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={t.icon}
-                size={16}
-                color={isActive ? colors.primary : colors.textMuted}
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  {
-                    color: isActive ? colors.primary : colors.textMuted,
-                    fontWeight: isActive
-                      ? FontWeight.semibold
-                      : FontWeight.regular,
-                  },
-                ]}
-              >
-                {t.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Search */}
-      <View
-        style={[
-          styles.searchBar,
-          {
-            backgroundColor: colors.surfaceSecondary,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
-        <TextInput
-          placeholder={
-            tab === "warehouse"
-              ? "Search by product or warehouse..."
-              : "Search by salesperson or product..."
-          }
-          placeholderTextColor={colors.textMuted}
-          value={search}
-          onChangeText={setSearch}
-          style={[styles.searchInput, { color: colors.text }]}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Filter + Sort Row */}
-      <View style={styles.filterRow}>
-        {filterChips.map((chip) => {
-          const isActive = stockFilter === chip.value;
-          return (
-            <TouchableOpacity
-              key={chip.value}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: isActive
-                    ? colors.primary
-                    : colors.surfaceSecondary,
-                  borderColor: isActive ? colors.primary : colors.border,
-                },
-              ]}
-              onPress={() => setStockFilter(chip.value)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={chip.icon}
-                size={14}
-                color={isActive ? "#FFFFFF" : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: isActive ? "#FFFFFF" : colors.textSecondary },
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-        <View style={styles.chipSpacer} />
-        <TouchableOpacity
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        {/* Tabs */}
+        <View
           style={[
-            styles.sortBtn,
+            styles.tabBar,
             {
-              backgroundColor: showSort
-                ? colors.primary
-                : colors.surfaceSecondary,
-              borderColor: showSort ? colors.primary : colors.border,
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
             },
           ]}
-          onPress={() => setShowSort(!showSort)}
-          activeOpacity={0.7}
         >
-          <Ionicons
-            name="swap-vertical-outline"
-            size={14}
-            color={showSort ? "#FFF" : colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.chipText,
-              { color: showSort ? "#FFF" : colors.textSecondary },
-            ]}
-          >
-            Sort
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Sort Options */}
-      {showSort && (
-        <View style={styles.sortRow}>
-          {sortOptions.map((opt) => {
-            const isActive = sortBy === opt.value;
+          {tabs.map((t) => {
+            const isActive = tab === t.key;
             return (
               <TouchableOpacity
-                key={opt.value}
+                key={t.key}
                 style={[
-                  styles.sortChip,
-                  {
-                    backgroundColor: isActive
-                      ? colors.primary + "15"
-                      : colors.surfaceSecondary,
-                    borderColor: isActive ? colors.primary : colors.border,
+                  styles.tab,
+                  isActive && {
+                    borderBottomColor: colors.primary,
+                    borderBottomWidth: 2,
                   },
                 ]}
-                onPress={() => {
-                  setSortBy(opt.value);
-                  setShowSort(false);
-                }}
+                onPress={() => handleTabSwitch(t.key)}
                 activeOpacity={0.7}
               >
                 <Ionicons
-                  name={opt.icon}
-                  size={12}
+                  name={t.icon}
+                  size={16}
                   color={isActive ? colors.primary : colors.textMuted}
                 />
                 <Text
                   style={[
-                    styles.sortChipText,
-                    { color: isActive ? colors.primary : colors.textSecondary },
+                    styles.tabLabel,
+                    {
+                      color: isActive ? colors.primary : colors.textMuted,
+                      fontWeight: isActive
+                        ? FontWeight.semibold
+                        : FontWeight.regular,
+                    },
                   ]}
                 >
-                  {opt.label}
+                  {t.label}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
-      )}
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        {/* Search */}
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.surfaceSecondary,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+          <TextInput
+            placeholder={
+              tab === "warehouse"
+                ? "Search by product or warehouse..."
+                : "Search by salesperson or product..."
+            }
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchInput, { color: colors.text }]}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
         </View>
-      ) : (
-        <FlatList
-          data={data}
-          renderItem={renderItem}
-          keyExtractor={(item, i) => item.id || String(i)}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name={emptyIcon} size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {emptyText}
-              </Text>
-            </View>
-          }
-        />
-      )}
 
-      {/* FABs stacked bottom-right */}
-      <View style={styles.fabCol}>
-        <TouchableOpacity
-          style={[styles.fabSmall, { backgroundColor: colors.primary }]}
-          onPress={() => router.push("/(app)/profile/stock-add" as any)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={20} color="#FFF" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.primary }]}
-          onPress={() => router.push("/(app)/profile/stock-assign" as any)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="arrow-forward" size={22} color="#FFF" />
-        </TouchableOpacity>
+        {/* Filter + Sort Row */}
+        <View style={styles.filterRow}>
+          {filterChips.map((chip) => {
+            const isActive = stockFilter === chip.value;
+            return (
+              <TouchableOpacity
+                key={chip.value}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isActive
+                      ? colors.primary
+                      : colors.surfaceSecondary,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => setStockFilter(chip.value)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={chip.icon}
+                  size={14}
+                  color={isActive ? "#FFFFFF" : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.chipText,
+                    { color: isActive ? "#FFFFFF" : colors.textSecondary },
+                  ]}
+                >
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          <View style={styles.chipSpacer} />
+          <TouchableOpacity
+            style={[
+              styles.sortBtn,
+              {
+                backgroundColor: showSort
+                  ? colors.primary
+                  : colors.surfaceSecondary,
+                borderColor: showSort ? colors.primary : colors.border,
+              },
+            ]}
+            onPress={() => setShowSort(!showSort)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="swap-vertical-outline"
+              size={14}
+              color={showSort ? "#FFF" : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.chipText,
+                { color: showSort ? "#FFF" : colors.textSecondary },
+              ]}
+            >
+              Sort
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Sort Options */}
+        {showSort && (
+          <View style={styles.sortRow}>
+            {sortOptions.map((opt) => {
+              const isActive = sortBy === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.sortChip,
+                    {
+                      backgroundColor: isActive
+                        ? colors.primary + "15"
+                        : colors.surfaceSecondary,
+                      borderColor: isActive ? colors.primary : colors.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    setSortBy(opt.value);
+                    setShowSort(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={opt.icon}
+                    size={12}
+                    color={isActive ? colors.primary : colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.sortChipText,
+                      {
+                        color: isActive
+                          ? colors.primary
+                          : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={data}
+            renderItem={renderItem}
+            keyExtractor={(item, i) => item.id || String(i)}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons name={emptyIcon} size={48} color={colors.textMuted} />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  {emptyText}
+                </Text>
+              </View>
+            }
+          />
+        )}
+
+        {/* FABs stacked bottom-right */}
+        <View style={styles.fabCol}>
+          <TouchableOpacity
+            style={[styles.fabSmall, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/(app)/profile/stock-add" as any)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={20} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.fab, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/(app)/profile/stock-assign" as any)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-forward" size={22} color="#FFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   tabBar: {
     flexDirection: "row",

@@ -189,16 +189,17 @@ export default function CreateSaleScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Create Sale" showBack />
 
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.surface }]}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Header */}
         <View style={styles.headerSection}>
           <View
@@ -446,12 +447,14 @@ export default function CreateSaleScreen() {
           size="lg"
         />
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   headerSection: {
     alignItems: "center",

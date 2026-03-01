@@ -143,15 +143,16 @@ export default function WarehouseDetailScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Warehouse Details" showBack />
 
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.surface }]}
-        contentContainerStyle={styles.content}
-      >
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+        >
         {/* Warehouse Card */}
         <View
           style={[
@@ -276,6 +277,7 @@ export default function WarehouseDetailScreen() {
           </View>
         )}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -304,6 +306,7 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { fontSize: FontSize.md, marginTop: Spacing.md },

@@ -7,6 +7,7 @@ import {
   useColorScheme,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
@@ -37,6 +38,7 @@ export default function UserDetailScreen() {
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -50,6 +52,7 @@ export default function UserDetailScreen() {
       Alert.alert("Error", "Failed to load user");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [id]);
 
@@ -58,6 +61,11 @@ export default function UserDetailScreen() {
       fetchUser();
     }, [fetchUser]),
   );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchUser();
+  };
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -153,14 +161,14 @@ export default function UserDetailScreen() {
     );
   };
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <SafeAreaView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={[styles.container, { backgroundColor: colors.primary }]}
         edges={["top"]}
       >
         <PageHeader title="User Details" showBack />
-        <View style={styles.center}>
+        <View style={[styles.mainContent, { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }]}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
@@ -170,11 +178,11 @@ export default function UserDetailScreen() {
   if (!user) {
     return (
       <SafeAreaView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={[styles.container, { backgroundColor: colors.primary }]}
         edges={["top"]}
       >
         <PageHeader title="User Details" showBack />
-        <View style={styles.center}>
+        <View style={[styles.mainContent, { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }]}>
           <Ionicons
             name="alert-circle-outline"
             size={48}
@@ -190,171 +198,180 @@ export default function UserDetailScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="User Details" showBack />
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-      >
-        {/* Profile Card */}
-        <View
-          style={[
-            styles.profileCard,
-            Shadow.sm,
-            { backgroundColor: colors.surface, borderColor: colors.borderLight },
-          ]}
-        >
-          <View
-            style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}
-          >
-            <Text style={[styles.avatarText, { color: colors.primary }]}>
-              {(user.name || "U").charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <Text style={[styles.name, { color: colors.text }]}>{user.name}</Text>
-          <Text style={[styles.email, { color: colors.textMuted }]}>
-            {user.email}
-          </Text>
-          <View style={styles.badgeRow}>
-            <Badge text={user.role} variant={getRoleBadge(user.role) as any} />
-            <Badge
-              text={user.is_active ? "Active" : "Inactive"}
-              variant={user.is_active ? "success" : "danger"}
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
             />
-          </View>
-        </View>
-
-        {/* Info Section */}
-        <View
-          style={[
-            styles.infoCard,
-            Shadow.sm,
-            { backgroundColor: colors.surface, borderColor: colors.borderLight },
-          ]}
+          }
         >
-          <InfoRow
-            icon="calendar-outline"
-            label="Created"
-            value={new Date(user.created_at).toLocaleDateString()}
-            colors={colors}
-          />
-          <InfoRow
-            icon="time-outline"
-            label="Last Updated"
-            value={new Date(user.updated_at).toLocaleDateString()}
-            colors={colors}
-          />
-          {user.failed_attempts > 0 && (
+          {/* Profile Card */}
+          <View
+            style={[
+              styles.profileCard,
+              Shadow.sm,
+              { backgroundColor: colors.surface, borderColor: colors.borderLight },
+            ]}
+          >
+            <View
+              style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}
+            >
+              <Text style={[styles.avatarText, { color: colors.primary }]}>
+                {(user.name || "U").charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Text style={[styles.name, { color: colors.text }]}>{user.name}</Text>
+            <Text style={[styles.email, { color: colors.textMuted }]}>
+              {user.email}
+            </Text>
+            <View style={styles.badgeRow}>
+              <Badge text={user.role} variant={getRoleBadge(user.role) as any} />
+              <Badge
+                text={user.is_active ? "Active" : "Inactive"}
+                variant={user.is_active ? "success" : "danger"}
+              />
+            </View>
+          </View>
+
+          {/* Info Section */}
+          <View
+            style={[
+              styles.infoCard,
+              Shadow.sm,
+              { backgroundColor: colors.surface, borderColor: colors.borderLight },
+            ]}
+          >
             <InfoRow
-              icon="warning-outline"
-              label="Failed Login Attempts"
-              value={String(user.failed_attempts)}
+              icon="calendar-outline"
+              label="Created"
+              value={new Date(user.created_at).toLocaleDateString()}
               colors={colors}
             />
-          )}
-        </View>
-
-        {/* Admin Actions */}
-        {isAdmin && (
-          <View style={styles.actionsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Actions
-            </Text>
-
-            <Button
-              title="Edit User"
-              onPress={() =>
-                router.push({
-                  pathname: "/(app)/profile/user-edit",
-                  params: {
-                    id: user.id,
-                    name: user.name,
-                    role: user.role,
-                  },
-                })
-              }
-              variant="primary"
-              icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
-              style={{ marginBottom: Spacing.sm }}
+            <InfoRow
+              icon="time-outline"
+              label="Last Updated"
+              value={new Date(user.updated_at).toLocaleDateString()}
+              colors={colors}
             />
-
-            <Button
-              title={user.is_active ? "Deactivate User" : "Activate User"}
-              onPress={handleToggleActive}
-              variant={user.is_active ? "danger" : "primary"}
-              loading={actionLoading === "toggle"}
-              icon={
-                <Ionicons
-                  name={
-                    user.is_active
-                      ? "close-circle-outline"
-                      : "checkmark-circle-outline"
-                  }
-                  size={18}
-                  color="#FFF"
-                />
-              }
-              style={{ marginBottom: Spacing.sm }}
-            />
-
-            <Button
-              title={showResetPassword ? "Cancel" : "Reset Password"}
-              onPress={() => {
-                setShowResetPassword(!showResetPassword);
-                setNewPassword("");
-              }}
-              variant="secondary"
-              icon={
-                <Ionicons
-                  name="key-outline"
-                  size={18}
-                  color={colors.primary}
-                />
-              }
-              style={{ marginBottom: Spacing.sm }}
-            />
-
-            {showResetPassword && (
-              <View
-                style={[
-                  styles.resetCard,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Input
-                  label="New Password"
-                  placeholder="Min 8 chars, uppercase, number, special"
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  isPassword
-                  leftIcon="lock-closed-outline"
-                />
-                <Button
-                  title="Set New Password"
-                  onPress={handleResetPassword}
-                  loading={actionLoading === "reset"}
-                  disabled={!newPassword.trim() || newPassword.length < 8}
-                  size="md"
-                />
-              </View>
+            {user.failed_attempts > 0 && (
+              <InfoRow
+                icon="warning-outline"
+                label="Failed Login Attempts"
+                value={String(user.failed_attempts)}
+                colors={colors}
+              />
             )}
-
-            <Button
-              title="Force Logout"
-              onPress={handleForceLogout}
-              variant="danger"
-              loading={actionLoading === "logout"}
-              icon={<Ionicons name="log-out-outline" size={18} color="#FFF" />}
-            />
           </View>
-        )}
-      </ScrollView>
+
+          {/* Admin Actions */}
+          {isAdmin && (
+            <View style={styles.actionsSection}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Actions
+              </Text>
+
+              <Button
+                title="Edit User"
+                onPress={() =>
+                  router.push({
+                    pathname: "/(app)/profile/user-edit",
+                    params: {
+                      id: user.id,
+                      name: user.name,
+                      role: user.role,
+                    },
+                  })
+                }
+                variant="primary"
+                icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              <Button
+                title={user.is_active ? "Deactivate User" : "Activate User"}
+                onPress={handleToggleActive}
+                variant={user.is_active ? "danger" : "primary"}
+                loading={actionLoading === "toggle"}
+                icon={
+                  <Ionicons
+                    name={
+                      user.is_active
+                        ? "close-circle-outline"
+                        : "checkmark-circle-outline"
+                    }
+                    size={18}
+                    color="#FFF"
+                  />
+                }
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              <Button
+                title={showResetPassword ? "Cancel" : "Reset Password"}
+                onPress={() => {
+                  setShowResetPassword(!showResetPassword);
+                  setNewPassword("");
+                }}
+                variant="secondary"
+                icon={
+                  <Ionicons
+                    name="key-outline"
+                    size={18}
+                    color={colors.primary}
+                  />
+                }
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              {showResetPassword && (
+                <View
+                  style={[
+                    styles.resetCard,
+                    {
+                      backgroundColor: colors.surfaceSecondary,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Input
+                    label="New Password"
+                    placeholder="Min 8 chars, uppercase, number, special"
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    isPassword
+                    leftIcon="lock-closed-outline"
+                  />
+                  <Button
+                    title="Set New Password"
+                    onPress={handleResetPassword}
+                    loading={actionLoading === "reset"}
+                    disabled={!newPassword.trim() || newPassword.length < 8}
+                    size="md"
+                  />
+                </View>
+              )}
+
+              <Button
+                title="Force Logout"
+                onPress={handleForceLogout}
+                variant="danger"
+                loading={actionLoading === "logout"}
+                icon={<Ionicons name="log-out-outline" size={18} color="#FFF" />}
+              />
+            </View>
+          )}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -383,6 +400,7 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { fontSize: FontSize.md, marginTop: Spacing.md },

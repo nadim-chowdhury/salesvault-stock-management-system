@@ -160,22 +160,23 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
       <PageHeader title="Product Details" showBack />
 
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.surface }]}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
+          }
+        >
         {/* Product Hero Card */}
         <View
           style={[
@@ -396,6 +397,7 @@ export default function ProductDetailScreen() {
           </View>
         )}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -424,6 +426,7 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { fontSize: FontSize.md, marginTop: Spacing.md },
