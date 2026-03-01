@@ -7,8 +7,6 @@ import {
   useColorScheme,
   Alert,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -26,6 +24,8 @@ import {
 } from "../../../src/constants/theme";
 import Button from "../../../src/components/ui/Button";
 import Input from "../../../src/components/ui/Input";
+import { SafeAreaView } from "react-native-safe-area-context";
+import PageHeader from "@/src/components/ui/PageHeader";
 
 interface SaleItem {
   product_id: string;
@@ -170,12 +170,14 @@ export default function CreateSaleScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
+      <PageHeader title="Create Sale" showBack />
+
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={[styles.container, { backgroundColor: colors.surface }]}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
@@ -258,14 +260,11 @@ export default function CreateSaleScreen() {
                       <Text style={[styles.stockName, { color: colors.text }]}>
                         {stock.product?.name || "Product"}
                       </Text>
-                      {!isAdminOrManager && (
-                        <Text
-                          style={[styles.stockQty, { color: colors.textMuted }]}
-                        >
-                          Available:{" "}
-                          {stock.quantity_remaining ?? stock.quantity}
-                        </Text>
-                      )}
+                      <Text
+                        style={[styles.stockQty, { color: colors.textMuted }]}
+                      >
+                        Available: {stock.quantity_remaining ?? stock.quantity}
+                      </Text>
                     </View>
                     <Text
                       style={[styles.stockPrice, { color: colors.primary }]}
@@ -429,7 +428,7 @@ export default function CreateSaleScreen() {
           size="lg"
         />
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

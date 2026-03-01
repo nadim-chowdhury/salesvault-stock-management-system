@@ -6,8 +6,6 @@ import {
   ScrollView,
   useColorScheme,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +21,8 @@ import {
 } from "../../../src/constants/theme";
 import Button from "../../../src/components/ui/Button";
 import Input from "../../../src/components/ui/Input";
+import PageHeader from "@/src/components/ui/PageHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CreateProductScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -73,12 +73,14 @@ export default function CreateProductScreen() {
     price && costPrice ? parseFloat(price) - parseFloat(costPrice) : null;
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
+      <PageHeader title="Create Product" showBack />
+
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={[styles.container, { backgroundColor: colors.surface }]}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
@@ -202,7 +204,7 @@ export default function CreateProductScreen() {
           size="lg"
         />
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
