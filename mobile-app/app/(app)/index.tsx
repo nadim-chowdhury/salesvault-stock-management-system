@@ -7,7 +7,11 @@ import {
   RefreshControl,
   useColorScheme,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
+
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useAuthStore } from "../../src/stores/auth-store";
 import api from "../../src/services/api";
@@ -18,6 +22,7 @@ import {
   FontSize,
   FontWeight,
   BorderRadius,
+  Shadow,
 } from "../../src/constants/theme";
 import Card from "../../src/components/ui/Card";
 import StatCard from "../../src/components/ui/StatCard";
@@ -27,7 +32,9 @@ export default function DashboardScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { user, isAuthenticated } = useAuthStore();
+  const router = useRouter();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const isSalesperson = user?.role === "SALESPERSON";
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -94,9 +101,9 @@ export default function DashboardScreen() {
       </View>
 
       {isAdmin ? (
-        <AdminDashboard data={data} colors={colors} />
+        <AdminDashboard data={data} colors={colors} router={router} />
       ) : (
-        <SalespersonDashboard data={data} colors={colors} />
+        <SalespersonDashboard data={data} colors={colors} router={router} />
       )}
 
       {/* Recent Activity */}
@@ -137,7 +144,15 @@ function formatCurrency(amount: number) {
   return amount >= 1000 ? `৳${(amount / 1000).toFixed(1)}k` : `৳${amount}`;
 }
 
-function AdminDashboard({ data, colors }: { data: any; colors: any }) {
+function AdminDashboard({
+  data,
+  colors,
+  router,
+}: {
+  data: any;
+  colors: any;
+  router: any;
+}) {
   const salesToday = data?.sales_today;
   const monthlySales = data?.monthly_sales;
   const lowStockCount = data?.low_stock_alerts?.length ?? 0;
@@ -174,6 +189,43 @@ function AdminDashboard({ data, colors }: { data: any; colors: any }) {
           value={data?.top_salespersons?.length ?? 0}
           icon="people"
           color={colors.info}
+        />
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Quick Actions
+        </Text>
+        <DashMenuItem
+          icon="business-outline"
+          label="Warehouses"
+          onPress={() => router.push("/(app)/profile/warehouses")}
+          colors={colors}
+        />
+        <DashMenuItem
+          icon="people-circle-outline"
+          label="Warehouse Users"
+          onPress={() => router.push("/(app)/profile/warehouse-users")}
+          colors={colors}
+        />
+        <DashMenuItem
+          icon="layers-outline"
+          label="Stock Management"
+          onPress={() => router.push("/(app)/profile/stock")}
+          colors={colors}
+        />
+        <DashMenuItem
+          icon="checkmark-done-outline"
+          label="Sale Approvals"
+          onPress={() => router.push("/(app)/sales/sales-approvals")}
+          colors={colors}
+        />
+        <DashMenuItem
+          icon="trophy-outline"
+          label="Sales Targets"
+          onPress={() => router.push("/(app)/sales/sales-targets")}
+          colors={colors}
         />
       </View>
 
@@ -221,7 +273,15 @@ function AdminDashboard({ data, colors }: { data: any; colors: any }) {
   );
 }
 
-function SalespersonDashboard({ data, colors }: { data: any; colors: any }) {
+function SalespersonDashboard({
+  data,
+  colors,
+  router,
+}: {
+  data: any;
+  colors: any;
+  router: any;
+}) {
   const mySalesToday = data?.my_sales_today;
   const myStock = data?.my_stock;
 
@@ -242,6 +302,19 @@ function SalespersonDashboard({ data, colors }: { data: any; colors: any }) {
           icon="cube"
           color={colors.primary}
           subtitle={`${myStock?.total_assigned ?? 0} assigned`}
+        />
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Quick Actions
+        </Text>
+        <DashMenuItem
+          icon="trophy-outline"
+          label="Sales Targets"
+          onPress={() => router.push("/(app)/profile/sales-targets")}
+          colors={colors}
         />
       </View>
     </>
@@ -273,6 +346,34 @@ function formatTimeAgo(dateStr: string) {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `${days}d ago`;
+}
+
+function DashMenuItem({
+  icon,
+  label,
+  onPress,
+  colors,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  colors: any;
+}) {
+  return (
+    <TouchableOpacity
+      style={[
+        styles.menuItem,
+        Shadow.sm,
+        { backgroundColor: colors.surface, borderColor: colors.borderLight },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Ionicons name={icon} size={20} color={colors.primary} />
+      <Text style={[styles.menuLabel, { color: colors.text }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -318,4 +419,14 @@ const styles = StyleSheet.create({
   topInfo: { flex: 1 },
   topName: { fontSize: FontSize.md, fontWeight: FontWeight.medium },
   topValue: { fontSize: FontSize.xs, marginTop: 2 },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+  },
+  menuLabel: { flex: 1, fontSize: FontSize.md, fontWeight: FontWeight.medium },
 });

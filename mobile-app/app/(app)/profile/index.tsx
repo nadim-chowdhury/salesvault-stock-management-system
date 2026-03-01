@@ -89,7 +89,7 @@ export default function ProfileScreen() {
           <MenuItem
             icon="checkmark-done-outline"
             label="Sale Approvals"
-            onPress={() => router.push("/(app)/sales/approvals")}
+            onPress={() => router.push("/(app)/sales/sales-approvals")}
             colors={colors}
           />
         </>
@@ -97,7 +97,7 @@ export default function ProfileScreen() {
       <MenuItem
         icon="trophy-outline"
         label="Sales Targets"
-        onPress={() => router.push("/(app)/profile/sales-targets")}
+        onPress={() => router.push("/(app)/sales/sales-targets")}
         colors={colors}
       />
 

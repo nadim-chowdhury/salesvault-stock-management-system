@@ -193,7 +193,15 @@ export default function SalesApprovalsScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: colors.borderLight,
+            backgroundColor: colors.surface,
+          },
+        ]}
+      >
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -204,7 +212,15 @@ export default function SalesApprovalsScreen() {
       </View>
 
       {/* Filter Tabs */}
-      <View style={[styles.tabContainer, { borderBottomColor: colors.border }]}>
+      <View
+        style={[
+          styles.tabContainer,
+          {
+            borderBottomColor: colors.borderLight,
+            backgroundColor: colors.surface,
+          },
+        ]}
+      >
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.key}
@@ -385,7 +401,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: Spacing.md,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,

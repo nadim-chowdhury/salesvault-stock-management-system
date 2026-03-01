@@ -55,6 +55,12 @@ export default function AppLayout() {
             <Ionicons name="grid-outline" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("index");
+          },
+        })}
       />
       <Tabs.Screen
         name="products"
@@ -73,6 +79,12 @@ export default function AppLayout() {
             <Ionicons name="receipt-outline" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("sales", { screen: "index" });
+          },
+        })}
       />
       <Tabs.Screen
         name="activity"
@@ -92,6 +104,12 @@ export default function AppLayout() {
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("profile", { screen: "index" });
+          },
+        })}
       />
     </Tabs>
   );

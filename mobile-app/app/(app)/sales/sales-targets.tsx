@@ -239,7 +239,15 @@ export default function SalesTargetsScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: colors.borderLight,
+            backgroundColor: colors.surface,
+          },
+        ]}
+      >
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
