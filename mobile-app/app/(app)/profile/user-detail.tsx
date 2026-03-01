@@ -190,7 +190,7 @@ export default function UserDetailScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
       <PageHeader title="User Details" showBack />

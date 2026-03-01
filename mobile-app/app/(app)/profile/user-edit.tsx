@@ -71,19 +71,9 @@ export default function UserEditScreen() {
     }
   };
 
-  const roles: {
-    label: string;
-    value: string;
-    icon: keyof typeof Ionicons.glyphMap;
-  }[] = [
-    { label: "Salesperson", value: "SALESPERSON", icon: "person-outline" },
-    { label: "Manager", value: "MANAGER", icon: "briefcase-outline" },
-    { label: "Admin", value: "ADMIN", icon: "shield-outline" },
-  ];
-
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
       <PageHeader title="Edit User" showBack />

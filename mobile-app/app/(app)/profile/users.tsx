@@ -226,7 +226,7 @@ export default function UsersListScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: colors.surface }]}
       edges={["top"]}
     >
       <PageHeader title="User Management" showBack />

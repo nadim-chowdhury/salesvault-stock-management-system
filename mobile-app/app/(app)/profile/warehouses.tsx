@@ -24,6 +24,8 @@ import {
   Shadow,
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
+import PageHeader from "@/src/components/ui/PageHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type FilterStatus = "ALL" | "ACTIVE" | "INACTIVE";
 type SortOption = "newest" | "name_asc" | "name_desc" | "location";
@@ -197,7 +199,12 @@ export default function WarehousesScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
+    >
+      <PageHeader title="Warehouses" showBack />
+
       {/* Search */}
       <View
         style={[
@@ -385,7 +392,7 @@ export default function WarehousesScreen() {
           <Ionicons name="add" size={28} color="#FFF" />
         </TouchableOpacity>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

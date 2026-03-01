@@ -23,6 +23,8 @@ import {
 } from "../../../src/constants/theme";
 import Button from "../../../src/components/ui/Button";
 import Input from "../../../src/components/ui/Input";
+import { SafeAreaView } from "react-native-safe-area-context";
+import PageHeader from "@/src/components/ui/PageHeader";
 
 export default function WarehouseEditScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -70,12 +72,14 @@ export default function WarehouseEditScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
+      <PageHeader title="Edit Warehouse" showBack />
+
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={[styles.container, { backgroundColor: colors.surface }]}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
@@ -167,7 +171,7 @@ export default function WarehouseEditScreen() {
           </Text>
         )}
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

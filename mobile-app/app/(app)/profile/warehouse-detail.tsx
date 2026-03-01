@@ -23,6 +23,8 @@ import {
 } from "../../../src/constants/theme";
 import Badge from "../../../src/components/ui/Badge";
 import Button from "../../../src/components/ui/Button";
+import { SafeAreaView } from "react-native-safe-area-context";
+import PageHeader from "@/src/components/ui/PageHeader";
 
 export default function WarehouseDetailScreen() {
   const scheme = useColorScheme() ?? "light";
@@ -140,128 +142,141 @@ export default function WarehouseDetailScreen() {
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      edges={["top"]}
     >
-      {/* Warehouse Card */}
-      <View
-        style={[
-          styles.card,
-          Shadow.sm,
-          { backgroundColor: colors.surface, borderColor: colors.borderLight },
-        ]}
+      <PageHeader title="Warehouse Details" showBack />
+
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.surface }]}
+        contentContainerStyle={styles.content}
       >
+        {/* Warehouse Card */}
         <View
           style={[
-            styles.iconCircle,
-            { backgroundColor: colors.primary + "15" },
+            styles.card,
+            Shadow.sm,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+            },
           ]}
         >
-          <Ionicons name="business" size={32} color={colors.primary} />
+          <View
+            style={[
+              styles.iconCircle,
+              { backgroundColor: colors.primary + "15" },
+            ]}
+          >
+            <Ionicons name="business" size={32} color={colors.primary} />
+          </View>
+          <Text style={[styles.name, { color: colors.text }]}>
+            {warehouse.name}
+          </Text>
+          {warehouse.location && (
+            <View style={styles.locationRow}>
+              <Ionicons
+                name="location-outline"
+                size={16}
+                color={colors.textMuted}
+              />
+              <Text style={[styles.location, { color: colors.textMuted }]}>
+                {warehouse.location}
+              </Text>
+            </View>
+          )}
+          <Badge
+            text={warehouse.is_active ? "Active" : "Inactive"}
+            variant={warehouse.is_active ? "success" : "danger"}
+          />
         </View>
-        <Text style={[styles.name, { color: colors.text }]}>
-          {warehouse.name}
-        </Text>
-        {warehouse.location && (
-          <View style={styles.locationRow}>
-            <Ionicons
-              name="location-outline"
-              size={16}
-              color={colors.textMuted}
-            />
-            <Text style={[styles.location, { color: colors.textMuted }]}>
-              {warehouse.location}
+
+        {/* Info */}
+        <View
+          style={[
+            styles.infoCard,
+            Shadow.sm,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+            },
+          ]}
+        >
+          <InfoRow
+            icon="calendar-outline"
+            label="Created"
+            value={new Date(warehouse.created_at).toLocaleDateString()}
+            colors={colors}
+          />
+          <InfoRow
+            icon="time-outline"
+            label="Last Updated"
+            value={new Date(warehouse.updated_at).toLocaleDateString()}
+            colors={colors}
+          />
+        </View>
+
+        {/* Actions */}
+        {canEdit && (
+          <View style={styles.actionsSection}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Actions
             </Text>
+
+            <Button
+              title="Edit Warehouse"
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/profile/warehouse-edit",
+                  params: {
+                    id: warehouse.id,
+                    name: warehouse.name,
+                    location: warehouse.location || "",
+                  },
+                })
+              }
+              variant="primary"
+              icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
+              style={{ marginBottom: Spacing.sm }}
+            />
+
+            <Button
+              title={
+                warehouse.is_active
+                  ? "Deactivate Warehouse"
+                  : "Activate Warehouse"
+              }
+              onPress={handleToggleActive}
+              variant={warehouse.is_active ? "danger" : "primary"}
+              loading={actionLoading === "toggle"}
+              icon={
+                <Ionicons
+                  name={
+                    warehouse.is_active
+                      ? "close-circle-outline"
+                      : "checkmark-circle-outline"
+                  }
+                  size={18}
+                  color="#FFF"
+                />
+              }
+              style={{ marginBottom: Spacing.sm }}
+            />
+
+            {isAdmin && (
+              <Button
+                title="Delete Warehouse"
+                onPress={handleDelete}
+                variant="danger"
+                loading={actionLoading === "delete"}
+                icon={<Ionicons name="trash-outline" size={18} color="#FFF" />}
+              />
+            )}
           </View>
         )}
-        <Badge
-          text={warehouse.is_active ? "Active" : "Inactive"}
-          variant={warehouse.is_active ? "success" : "danger"}
-        />
-      </View>
-
-      {/* Info */}
-      <View
-        style={[
-          styles.infoCard,
-          Shadow.sm,
-          { backgroundColor: colors.surface, borderColor: colors.borderLight },
-        ]}
-      >
-        <InfoRow
-          icon="calendar-outline"
-          label="Created"
-          value={new Date(warehouse.created_at).toLocaleDateString()}
-          colors={colors}
-        />
-        <InfoRow
-          icon="time-outline"
-          label="Last Updated"
-          value={new Date(warehouse.updated_at).toLocaleDateString()}
-          colors={colors}
-        />
-      </View>
-
-      {/* Actions */}
-      {canEdit && (
-        <View style={styles.actionsSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Actions
-          </Text>
-
-          <Button
-            title="Edit Warehouse"
-            onPress={() =>
-              router.push({
-                pathname: "/(app)/profile/warehouse-edit",
-                params: {
-                  id: warehouse.id,
-                  name: warehouse.name,
-                  location: warehouse.location || "",
-                },
-              })
-            }
-            variant="primary"
-            icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
-            style={{ marginBottom: Spacing.sm }}
-          />
-
-          <Button
-            title={
-              warehouse.is_active
-                ? "Deactivate Warehouse"
-                : "Activate Warehouse"
-            }
-            onPress={handleToggleActive}
-            variant={warehouse.is_active ? "danger" : "primary"}
-            loading={actionLoading === "toggle"}
-            icon={
-              <Ionicons
-                name={
-                  warehouse.is_active
-                    ? "close-circle-outline"
-                    : "checkmark-circle-outline"
-                }
-                size={18}
-                color="#FFF"
-              />
-            }
-            style={{ marginBottom: Spacing.sm }}
-          />
-
-          {isAdmin && (
-            <Button
-              title="Delete Warehouse"
-              onPress={handleDelete}
-              variant="danger"
-              loading={actionLoading === "delete"}
-              icon={<Ionicons name="trash-outline" size={18} color="#FFF" />}
-            />
-          )}
-        </View>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
