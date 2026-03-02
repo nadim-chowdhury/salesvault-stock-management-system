@@ -30,12 +30,19 @@ export default function StatCard({
   const colors = Colors[scheme];
   const accentColor = color || colors.primary;
 
+  const isDark = scheme === "dark";
+
   return (
     <View
       style={[
         styles.card,
-        Shadow.sm,
-        { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          ...Shadow.sm,
+          shadowOpacity: isDark ? 0.2 : 0.05,
+          borderWidth: isDark ? 1 : 0,
+        },
       ]}
     >
       <View

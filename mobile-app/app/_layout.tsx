@@ -12,14 +12,14 @@ import * as Updates from "expo-updates";
 import { useAuthStore } from "../src/stores/auth-store";
 import { useThemeStore } from "../src/stores/theme-store";
 import { Colors } from "../src/constants/theme";
+import QuickActionDrawer from "../src/components/ui/QuickActionDrawer";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isInitialized: authInitialized } = useAuthStore();
-  const themeInitialized = useThemeStore((state) => !!state.themeMode);
   const segments = useSegments();
   const router = useRouter();
 
-  const isInitialized = authInitialized; // theme is initialized sync initially with default "system"
+  const isInitialized = authInitialized;
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -37,7 +37,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     return <SplashLoading />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {isAuthenticated && <QuickActionDrawer />}
+    </>
+  );
 }
 
 function UpdateGate({ children }: { children: React.ReactNode }) {
@@ -123,7 +128,7 @@ function SplashLoading() {
 
 export default function RootLayout() {
   const { initialize: authInit } = useAuthStore();
-  const { initialize: themeInit, themeMode } = useThemeStore();
+  const { initialize: themeInit } = useThemeStore();
   const scheme = useColorScheme() ?? "light";
 
   useEffect(() => {
