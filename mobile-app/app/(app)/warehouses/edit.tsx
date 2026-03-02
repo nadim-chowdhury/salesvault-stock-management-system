@@ -4,15 +4,15 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  TouchableOpacity,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -30,6 +30,7 @@ export default function WarehouseEditScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const { setThemeMode } = useThemeStore();
   const {
     id,
     name: initialName,
@@ -39,6 +40,11 @@ export default function WarehouseEditScreen() {
     name: string;
     location: string;
   }>();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [name, setName] = useState(initialName || "");
   const [location, setLocation] = useState(initialLocation || "");
@@ -76,7 +82,23 @@ export default function WarehouseEditScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Edit Warehouse" showBack />
+      <PageHeader
+        title="Edit Warehouse"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
@@ -84,94 +106,94 @@ export default function WarehouseEditScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: colors.primary + "15" },
-            ]}
-          >
-            <Ionicons name="create-outline" size={28} color={colors.primary} />
+          {/* Header */}
+          <View style={styles.headerSection}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons name="create-outline" size={28} color={colors.primary} />
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Edit Warehouse
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              Update warehouse details
+            </Text>
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Edit Warehouse
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Update warehouse details
-          </Text>
-        </View>
 
-        {/* Form Card */}
-        <View
-          style={[
-            styles.formCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <Input
-            label="Warehouse Name *"
-            placeholder="e.g. Main Warehouse"
-            value={name}
-            onChangeText={setName}
-            leftIcon="business-outline"
-          />
-          <Input
-            label="Location (optional)"
-            placeholder="e.g. Dhaka, Bangladesh"
-            value={location}
-            onChangeText={setLocation}
-            leftIcon="location-outline"
-          />
-        </View>
-
-        {/* Change indicator */}
-        {hasChanges && (
+          {/* Form Card */}
           <View
             style={[
-              styles.changeCard,
+              styles.formCard,
+              Shadow.sm,
               {
-                backgroundColor: colors.surfaceSecondary,
-                borderColor: colors.border,
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
               },
             ]}
           >
-            <Text style={[styles.changeLabel, { color: colors.textMuted }]}>
-              Changes detected
-            </Text>
-            <View style={styles.changeDetails}>
-              {name !== (initialName || "") && (
-                <Text style={[styles.changeText, { color: colors.primary }]}>
-                  Name: {name}
-                </Text>
-              )}
-              {location !== (initialLocation || "") && (
-                <Text style={[styles.changeText, { color: colors.primary }]}>
-                  Location: {location || "(cleared)"}
-                </Text>
-              )}
-            </View>
+            <Input
+              label="Warehouse Name *"
+              placeholder="e.g. Main Warehouse"
+              value={name}
+              onChangeText={setName}
+              leftIcon="business-outline"
+            />
+            <Input
+              label="Location (optional)"
+              placeholder="e.g. Dhaka, Bangladesh"
+              value={location}
+              onChangeText={setLocation}
+              leftIcon="location-outline"
+            />
           </View>
-        )}
 
-        <Button
-          title="Save Changes"
-          onPress={handleSave}
-          loading={loading}
-          disabled={!name.trim() || !hasChanges}
-          size="lg"
-        />
+          {/* Change indicator */}
+          {hasChanges && (
+            <View
+              style={[
+                styles.changeCard,
+                {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.changeLabel, { color: colors.textMuted }]}>
+                Changes detected
+              </Text>
+              <View style={styles.changeDetails}>
+                {name !== (initialName || "") && (
+                  <Text style={[styles.changeText, { color: colors.primary }]}>
+                    Name: {name}
+                  </Text>
+                )}
+                {location !== (initialLocation || "") && (
+                  <Text style={[styles.changeText, { color: colors.primary }]}>
+                    Location: {location || "(cleared)"}
+                  </Text>
+                )}
+              </View>
+            </View>
+          )}
 
-        {!hasChanges && (
-          <Text style={[styles.noChanges, { color: colors.textMuted }]}>
-            No changes to save
-          </Text>
-        )}
-      </ScrollView>
+          <Button
+            title="Save Changes"
+            onPress={handleSave}
+            loading={loading}
+            disabled={!name.trim() || !hasChanges}
+            size="lg"
+          />
+
+          {!hasChanges && (
+            <Text style={[styles.noChanges, { color: colors.textMuted }]}>
+              No changes to save
+            </Text>
+          )}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -231,5 +253,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: FontSize.sm,
     marginTop: Spacing.md,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

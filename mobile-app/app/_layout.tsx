@@ -5,17 +5,21 @@ import {
   View,
   ActivityIndicator,
   StyleSheet,
-  useColorScheme,
   Text,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import * as Updates from "expo-updates";
 import { useAuthStore } from "../src/stores/auth-store";
+import { useThemeStore } from "../src/stores/theme-store";
 import { Colors } from "../src/constants/theme";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isInitialized } = useAuthStore();
+  const { isAuthenticated, isInitialized: authInitialized } = useAuthStore();
+  const themeInitialized = useThemeStore((state) => !!state.themeMode);
   const segments = useSegments();
   const router = useRouter();
+
+  const isInitialized = authInitialized; // theme is initialized sync initially with default "system"
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -118,12 +122,14 @@ function SplashLoading() {
 }
 
 export default function RootLayout() {
-  const { initialize } = useAuthStore();
+  const { initialize: authInit } = useAuthStore();
+  const { initialize: themeInit, themeMode } = useThemeStore();
   const scheme = useColorScheme() ?? "light";
 
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    authInit();
+    themeInit();
+  }, [authInit, themeInit]);
 
   return (
     <>

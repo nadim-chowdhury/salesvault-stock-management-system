@@ -4,15 +4,17 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   Alert,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -32,8 +34,14 @@ export default function WarehouseDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
   const isAdmin = currentUser?.role === "ADMIN";
   const canEdit = isAdmin || currentUser?.role === "MANAGER";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [warehouse, setWarehouse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -146,137 +154,153 @@ export default function WarehouseDetailScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Warehouse Details" showBack />
+      <PageHeader
+        title="Warehouse Details"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
         >
-        {/* Warehouse Card */}
-        <View
-          style={[
-            styles.card,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
+          {/* Warehouse Card */}
           <View
             style={[
-              styles.iconCircle,
-              { backgroundColor: colors.primary + "15" },
+              styles.card,
+              Shadow.sm,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
             ]}
           >
-            <Ionicons name="business" size={32} color={colors.primary} />
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons name="business" size={32} color={colors.primary} />
+            </View>
+            <Text style={[styles.name, { color: colors.text }]}>
+              {warehouse.name}
+            </Text>
+            {warehouse.location && (
+              <View style={styles.locationRow}>
+                <Ionicons
+                  name="location-outline"
+                  size={16}
+                  color={colors.textMuted}
+                />
+                <Text style={[styles.location, { color: colors.textMuted }]}>
+                  {warehouse.location}
+                </Text>
+              </View>
+            )}
+            <Badge
+              text={warehouse.is_active ? "Active" : "Inactive"}
+              variant={warehouse.is_active ? "success" : "danger"}
+            />
           </View>
-          <Text style={[styles.name, { color: colors.text }]}>
-            {warehouse.name}
-          </Text>
-          {warehouse.location && (
-            <View style={styles.locationRow}>
-              <Ionicons
-                name="location-outline"
-                size={16}
-                color={colors.textMuted}
-              />
-              <Text style={[styles.location, { color: colors.textMuted }]}>
-                {warehouse.location}
+
+          {/* Info */}
+          <View
+            style={[
+              styles.infoCard,
+              Shadow.sm,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
+            ]}
+          >
+            <InfoRow
+              icon="calendar-outline"
+              label="Created"
+              value={new Date(warehouse.created_at).toLocaleDateString()}
+              colors={colors}
+            />
+            <InfoRow
+              icon="time-outline"
+              label="Last Updated"
+              value={new Date(warehouse.updated_at).toLocaleDateString()}
+              colors={colors}
+            />
+          </View>
+
+          {/* Actions */}
+          {canEdit && (
+            <View style={styles.actionsSection}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Actions
               </Text>
+
+              <Button
+                title="Edit Warehouse"
+                onPress={() =>
+                  router.push({
+                    pathname: "/(app)/warehouses/edit",
+                    params: {
+                      id: warehouse.id,
+                      name: warehouse.name,
+                      location: warehouse.location || "",
+                    },
+                  })
+                }
+                variant="primary"
+                icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              <Button
+                title={
+                  warehouse.is_active
+                    ? "Deactivate Warehouse"
+                    : "Activate Warehouse"
+                }
+                onPress={handleToggleActive}
+                variant={warehouse.is_active ? "secondary" : "primary"}
+                loading={actionLoading === "toggle"}
+                icon={
+                  <Ionicons
+                    name={
+                      warehouse.is_active
+                        ? "close-circle-outline"
+                        : "checkmark-circle-outline"
+                    }
+                    size={18}
+                    color={warehouse.is_active ? colors.danger : "#FFF"}
+                  />
+                }
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              {isAdmin && (
+                <Button
+                  title="Delete Warehouse"
+                  onPress={handleDelete}
+                  variant="danger"
+                  loading={actionLoading === "delete"}
+                  icon={<Ionicons name="trash-outline" size={18} color="#FFF" />}
+                />
+              )}
             </View>
           )}
-          <Badge
-            text={warehouse.is_active ? "Active" : "Inactive"}
-            variant={warehouse.is_active ? "success" : "danger"}
-          />
-        </View>
-
-        {/* Info */}
-        <View
-          style={[
-            styles.infoCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <InfoRow
-            icon="calendar-outline"
-            label="Created"
-            value={new Date(warehouse.created_at).toLocaleDateString()}
-            colors={colors}
-          />
-          <InfoRow
-            icon="time-outline"
-            label="Last Updated"
-            value={new Date(warehouse.updated_at).toLocaleDateString()}
-            colors={colors}
-          />
-        </View>
-
-        {/* Actions */}
-        {canEdit && (
-          <View style={styles.actionsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Actions
-            </Text>
-
-            <Button
-              title="Edit Warehouse"
-              onPress={() =>
-                router.push({
-                  pathname: "/(app)/profile/warehouse-edit",
-                  params: {
-                    id: warehouse.id,
-                    name: warehouse.name,
-                    location: warehouse.location || "",
-                  },
-                })
-              }
-              variant="primary"
-              icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
-              style={{ marginBottom: Spacing.sm }}
-            />
-
-            <Button
-              title={
-                warehouse.is_active
-                  ? "Deactivate Warehouse"
-                  : "Activate Warehouse"
-              }
-              onPress={handleToggleActive}
-              variant={warehouse.is_active ? "danger" : "primary"}
-              loading={actionLoading === "toggle"}
-              icon={
-                <Ionicons
-                  name={
-                    warehouse.is_active
-                      ? "close-circle-outline"
-                      : "checkmark-circle-outline"
-                  }
-                  size={18}
-                  color="#FFF"
-                />
-              }
-              style={{ marginBottom: Spacing.sm }}
-            />
-
-            {isAdmin && (
-              <Button
-                title="Delete Warehouse"
-                onPress={handleDelete}
-                variant="danger"
-                loading={actionLoading === "delete"}
-                icon={<Ionicons name="trash-outline" size={18} color="#FFF" />}
-              />
-            )}
-          </View>
-        )}
-      </ScrollView>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -356,5 +380,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semibold,
     marginBottom: Spacing.md,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

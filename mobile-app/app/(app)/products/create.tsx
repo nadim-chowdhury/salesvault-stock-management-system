@@ -4,13 +4,15 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   Alert,
+  TouchableOpacity,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -28,6 +30,12 @@ export default function CreateProductScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const { setThemeMode } = useThemeStore();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
@@ -77,7 +85,23 @@ export default function CreateProductScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Create Product" showBack />
+      <PageHeader
+        title="Create Product"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
@@ -275,5 +299,12 @@ const styles = StyleSheet.create({
   previewMargin: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

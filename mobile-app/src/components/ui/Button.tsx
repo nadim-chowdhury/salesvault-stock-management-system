@@ -15,7 +15,7 @@ import {
   FontWeight,
   Spacing,
 } from "../../constants/theme";
-import { useColorScheme } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface ButtonProps {
   title: string;

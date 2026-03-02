@@ -6,16 +6,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  useColorScheme,
   ActivityIndicator,
   Modal,
   TextInput,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -30,7 +31,13 @@ export default function DailySalesReportScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { user } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [date, setDate] = useState(new Date());
   const [reportData, setReportData] = useState<any[]>([]);
@@ -166,7 +173,23 @@ export default function DailySalesReportScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Daily Sales Report" showBack />
+      <PageHeader
+        title="Daily Sales Report"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         {/* Date Selector */}
@@ -605,5 +628,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FontSize.md,
     marginTop: Spacing.md,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

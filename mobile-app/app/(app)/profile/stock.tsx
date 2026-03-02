@@ -7,12 +7,12 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
-  useColorScheme,
   ActivityIndicator,
   LayoutAnimation,
   Platform,
   UIManager,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
@@ -29,6 +29,7 @@ import Badge from "../../../src/components/ui/Badge";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PageHeader from "@/src/components/ui/PageHeader";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 
 type TabType = "warehouse" | "assignments";
 type StockSort =
@@ -44,6 +45,12 @@ export default function StockScreen() {
   const colors = Colors[scheme];
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [tab, setTab] = useState<TabType>("warehouse");
   const [stocks, setStocks] = useState<any[]>([]);
@@ -387,7 +394,23 @@ export default function StockScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Stock" showBack />
+      <PageHeader
+        title="Stock"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         {/* Tabs */}
@@ -480,7 +503,7 @@ export default function StockScreen() {
                     backgroundColor: isActive
                       ? colors.primary
                       : colors.surfaceSecondary,
-                    borderColor: isActive ? colors.primary : colors.border,
+                      borderColor: isActive ? colors.primary : colors.border,
                   },
                 ]}
                 onPress={() => setStockFilter(chip.value)}
@@ -772,5 +795,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

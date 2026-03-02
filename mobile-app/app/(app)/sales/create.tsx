@@ -4,16 +4,18 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
-  Alert,
-  TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -40,7 +42,13 @@ export default function CreateSaleScreen() {
   const colors = Colors[scheme];
   const router = useRouter();
   const { user } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
   const isAdminOrManager = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [myStock, setMyStock] = useState<any[]>([]);
   const [items, setItems] = useState<SaleItem[]>([]);
@@ -49,6 +57,11 @@ export default function CreateSaleScreen() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Manual Quantity Modal State
+  const [qtyModalVisible, setQtyModalVisible] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [manualQtyValue, setManualQtyValue] = useState("");
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -148,6 +161,38 @@ export default function CreateSaleScreen() {
     setItems(updated);
   };
 
+  const openQtyModal = (index: number) => {
+    setEditingItemIndex(index);
+    setManualQtyValue(String(items[index].quantity));
+    setQtyModalVisible(true);
+  };
+
+  const handleManualQtySave = () => {
+    if (editingItemIndex === null) return;
+
+    const parsed = parseInt(manualQtyValue);
+    if (isNaN(parsed) || parsed < 1) {
+      Alert.alert(
+        "Invalid Quantity",
+        "Please enter a valid number greater than 0",
+      );
+      return;
+    }
+
+    const available = items[editingItemIndex].available;
+    if (parsed > available) {
+      Alert.alert(
+        "Insufficient Stock",
+        `Only ${available} units available in stock.`,
+      );
+      return;
+    }
+
+    updateQuantity(editingItemIndex, manualQtyValue);
+    setQtyModalVisible(false);
+    setEditingItemIndex(null);
+  };
+
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
   };
@@ -192,7 +237,23 @@ export default function CreateSaleScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Create Sale" showBack />
+      <PageHeader
+        title="Create Sale"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
@@ -200,189 +261,244 @@ export default function CreateSaleScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: colors.primary + "15" },
-            ]}
-          >
-            <Ionicons name="receipt-outline" size={28} color={colors.primary} />
-          </View>
-          <Text style={[styles.title, { color: colors.text }]}>New Sale</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            {isAdminOrManager
-              ? "Select products from the catalog and record a sale"
-              : "Select products from your assigned stock"}
-          </Text>
-        </View>
-
-        {/* Available Stock */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="cube" size={16} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Available Stock
+          {/* Header */}
+          <View style={styles.headerSection}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons
+                name="receipt-outline"
+                size={28}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>New Sale</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              {isAdminOrManager
+                ? "Select products from the catalog and record a sale"
+                : "Select products from your assigned stock"}
             </Text>
           </View>
 
-          {loading ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.primary}
-              style={{ paddingVertical: Spacing.xl }}
-            />
-          ) : myStock.length === 0 ? (
-            <View style={styles.emptyStock}>
-              <Ionicons
-                name="cube-outline"
-                size={32}
-                color={colors.textMuted}
-              />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAdminOrManager
-                  ? "No active products found"
-                  : "No stock assigned to you"}
-              </Text>
-            </View>
-          ) : (
-            myStock.map((stock, i) => {
-              const pid = stock.product_id || stock.product?.id;
-              const isAdded = items.some((it) => it.product_id === pid);
-              return (
-                <TouchableOpacity
-                  key={i}
-                  style={[
-                    styles.stockCard,
-                    !isAdded && Shadow.sm,
-                    {
-                      backgroundColor: isAdded
-                        ? colors.primary + "10"
-                        : colors.surface,
-                      borderColor: isAdded
-                        ? colors.primary
-                        : colors.borderLight,
-                    },
-                  ]}
-                  onPress={() => addItem(stock)}
-                  activeOpacity={0.7}
-                  disabled={isAdded}
-                >
-                  <View style={styles.stockRow}>
-                    <Ionicons
-                      name={isAdded ? "checkmark-circle" : "add-circle-outline"}
-                      size={22}
-                      color={isAdded ? colors.primary : colors.textMuted}
-                    />
-                    <View style={styles.stockInfo}>
-                      <Text style={[styles.stockName, { color: colors.text }]}>
-                        {stock.product?.name || "Product"}
-                      </Text>
-                      <Text
-                        style={[styles.stockQty, { color: colors.textMuted }]}
-                      >
-                        Available: {stock.quantity_remaining ?? stock.quantity}
-                      </Text>
-                    </View>
-                    <Text
-                      style={[styles.stockPrice, { color: colors.primary }]}
-                    >
-                      ৳{Number(stock.product?.price || 0).toLocaleString()}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
-
-        {/* Selected Items */}
-        {items.length > 0 && (
+          {/* Available Stock */}
           <View style={styles.sectionWrapper}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="cart" size={16} color={colors.primary} />
+              <Ionicons name="cube" size={16} color={colors.primary} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Sale Items ({items.length})
+                Available Stock
               </Text>
             </View>
 
-            {items.map((item, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.itemCard,
-                  Shadow.sm,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.borderLight,
-                  },
-                ]}
-              >
-                <View style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.itemName, { color: colors.text }]}>
-                      {item.product_name}
-                    </Text>
-                    <Text style={[styles.itemSub, { color: colors.textMuted }]}>
-                      ৳{item.price.toLocaleString()} × {item.quantity} = ৳
-                      {(item.price * item.quantity).toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={styles.qtyControls}>
-                    <TouchableOpacity
-                      onPress={() =>
-                        updateQuantity(i, String(item.quantity - 1))
-                      }
-                      style={[
-                        styles.qtyBtn,
-                        { backgroundColor: colors.surfaceSecondary },
-                      ]}
-                    >
-                      <Ionicons name="remove" size={16} color={colors.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.qtyText, { color: colors.text }]}>
-                      {item.quantity}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() =>
-                        updateQuantity(i, String(item.quantity + 1))
-                      }
-                      style={[
-                        styles.qtyBtn,
-                        { backgroundColor: colors.surfaceSecondary },
-                      ]}
-                    >
-                      <Ionicons name="add" size={16} color={colors.text} />
-                    </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => removeItem(i)}
-                    style={styles.removeBtn}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={18}
-                      color={colors.danger}
-                    />
-                  </TouchableOpacity>
-                </View>
+            {loading ? (
+              <ActivityIndicator
+                size="small"
+                color={colors.primary}
+                style={{ paddingVertical: Spacing.xl }}
+              />
+            ) : myStock.length === 0 ? (
+              <View style={styles.emptyStock}>
+                <Ionicons
+                  name="cube-outline"
+                  size={32}
+                  color={colors.textMuted}
+                />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  {isAdminOrManager
+                    ? "No active products found"
+                    : "No stock assigned to you"}
+                </Text>
               </View>
-            ))}
+            ) : (
+              myStock.map((stock, i) => {
+                const pid = stock.product_id || stock.product?.id;
+                const isAdded = items.some((it) => it.product_id === pid);
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.stockCard,
+                      !isAdded && Shadow.sm,
+                      {
+                        backgroundColor: isAdded
+                          ? colors.primary + "10"
+                          : colors.surface,
+                        borderColor: isAdded
+                          ? colors.primary
+                          : colors.borderLight,
+                      },
+                    ]}
+                    onPress={() => addItem(stock)}
+                    activeOpacity={0.7}
+                    disabled={isAdded}
+                  >
+                    <View style={styles.stockRow}>
+                      <Ionicons
+                        name={
+                          isAdded ? "checkmark-circle" : "add-circle-outline"
+                        }
+                        size={22}
+                        color={isAdded ? colors.primary : colors.textMuted}
+                      />
+                      <View style={styles.stockInfo}>
+                        <Text
+                          style={[styles.stockName, { color: colors.text }]}
+                        >
+                          {stock.product?.name || "Product"}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.stockQty,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          Available:{" "}
+                          {stock.quantity_remaining ?? stock.quantity}
+                        </Text>
+                      </View>
+                      <Text
+                        style={[styles.stockPrice, { color: colors.primary }]}
+                      >
+                        ৳{Number(stock.product?.price || 0).toLocaleString()}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </View>
-        )}
 
-        {/* Customer Info */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="person" size={16} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Customer (optional)
-            </Text>
+          {/* Selected Items */}
+          {items.length > 0 && (
+            <View style={styles.sectionWrapper}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="cart" size={16} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Sale Items ({items.length})
+                </Text>
+              </View>
+
+              {items.map((item, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.itemCard,
+                    Shadow.sm,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.borderLight,
+                    },
+                  ]}
+                >
+                  <View style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.itemName, { color: colors.text }]}>
+                        {item.product_name}
+                      </Text>
+                      <Text
+                        style={[styles.itemSub, { color: colors.textMuted }]}
+                      >
+                        ৳{item.price.toLocaleString()} × {item.quantity} = ৳
+                        {(item.price * item.quantity).toLocaleString()}
+                      </Text>
+                    </View>
+                    <View style={styles.qtyControls}>
+                      <TouchableOpacity
+                        onPress={() =>
+                          updateQuantity(i, String(item.quantity - 1))
+                        }
+                        style={[
+                          styles.qtyBtn,
+                          { backgroundColor: colors.surfaceSecondary },
+                        ]}
+                      >
+                        <Ionicons name="remove" size={16} color={colors.text} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => openQtyModal(i)}
+                        style={styles.qtyDisplay}
+                      >
+                        <Text style={[styles.qtyText, { color: colors.text }]}>
+                          {item.quantity}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() =>
+                          updateQuantity(i, String(item.quantity + 1))
+                        }
+                        style={[
+                          styles.qtyBtn,
+                          { backgroundColor: colors.surfaceSecondary },
+                        ]}
+                      >
+                        <Ionicons name="add" size={16} color={colors.text} />
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => removeItem(i)}
+                      style={styles.removeBtn}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={18}
+                        color={colors.danger}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Customer Info */}
+          <View style={styles.sectionWrapper}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="person" size={16} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Customer (optional)
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.formCard,
+                Shadow.sm,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderLight,
+                },
+              ]}
+            >
+              <Input
+                label="Name"
+                placeholder="Customer name"
+                value={customerName}
+                onChangeText={setCustomerName}
+                leftIcon="person-outline"
+              />
+              <Input
+                label="Phone"
+                placeholder="Phone number"
+                value={customerPhone}
+                onChangeText={setCustomerPhone}
+                keyboardType="phone-pad"
+                leftIcon="call-outline"
+              />
+              <Input
+                label="Notes"
+                placeholder="Sale notes..."
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+              />
+            </View>
           </View>
+
+          {/* Total & Submit */}
           <View
             style={[
-              styles.formCard,
+              styles.totalCard,
               Shadow.sm,
               {
                 backgroundColor: colors.surface,
@@ -390,64 +506,90 @@ export default function CreateSaleScreen() {
               },
             ]}
           >
-            <Input
-              label="Name"
-              placeholder="Customer name"
-              value={customerName}
-              onChangeText={setCustomerName}
-              leftIcon="person-outline"
-            />
-            <Input
-              label="Phone"
-              placeholder="Phone number"
-              value={customerPhone}
-              onChangeText={setCustomerPhone}
-              keyboardType="phone-pad"
-              leftIcon="call-outline"
-            />
-            <Input
-              label="Notes"
-              placeholder="Sale notes..."
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-            />
-          </View>
-        </View>
-
-        {/* Total & Submit */}
-        <View
-          style={[
-            styles.totalCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: colors.textMuted }]}>
-              Total Amount
-            </Text>
-            <Text style={[styles.totalValue, { color: colors.text }]}>
-              ৳{total.toLocaleString()}
+            <View style={styles.totalRow}>
+              <Text
+                style={[styles.totalLabel, { color: colors.textSecondary }]}
+              >
+                Total Amount
+              </Text>
+              <Text style={[styles.totalValue, { color: colors.text }]}>
+                ৳{total.toLocaleString()}
+              </Text>
+            </View>
+            <Text style={[styles.itemCountText, { color: colors.textMuted }]}>
+              {items.length} item{items.length !== 1 ? "s" : ""} selected
             </Text>
           </View>
-          <Text style={[styles.itemCountText, { color: colors.textMuted }]}>
-            {items.length} item{items.length !== 1 ? "s" : ""} selected
-          </Text>
-        </View>
 
-        <Button
-          title="Complete Sale"
-          onPress={handleSubmit}
-          loading={submitting}
-          disabled={items.length === 0}
-          size="lg"
-        />
-      </ScrollView>
+          <Button
+            title="Complete Sale"
+            onPress={handleSubmit}
+            loading={submitting}
+            disabled={items.length === 0}
+            size="lg"
+          />
+        </ScrollView>
       </View>
+
+      {/* Manual Quantity Modal */}
+      <Modal
+        visible={qtyModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setQtyModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Update Quantity
+              </Text>
+              <TouchableOpacity onPress={() => setQtyModalVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text
+              style={[styles.modalSubtitle, { color: colors.textSecondary }]}
+            >
+              {editingItemIndex !== null
+                ? items[editingItemIndex].product_name
+                : ""}
+            </Text>
+
+            <Input
+              label="Enter Quantity"
+              placeholder="0"
+              value={manualQtyValue}
+              onChangeText={setManualQtyValue}
+              keyboardType="number-pad"
+              autoFocus
+            />
+
+            {editingItemIndex !== null && (
+              <Text style={[styles.stockInfoText, { color: colors.textMuted }]}>
+                Available: {items[editingItemIndex].available}
+              </Text>
+            )}
+
+            <View style={styles.modalActions}>
+              <Button
+                title="Cancel"
+                onPress={() => setQtyModalVisible(false)}
+                variant="secondary"
+                style={{ flex: 1 }}
+              />
+              <Button
+                title="Update"
+                onPress={handleManualQtySave}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -528,10 +670,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  qtyDisplay: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    minWidth: 40,
+    alignItems: "center",
+  },
   qtyText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    minWidth: 24,
     textAlign: "center",
   },
   removeBtn: { padding: Spacing.sm },
@@ -556,5 +704,49 @@ const styles = StyleSheet.create({
   itemCountText: {
     fontSize: FontSize.xs,
     marginTop: Spacing.xs,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.xl,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    ...Shadow.lg,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
+  },
+  modalTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  modalSubtitle: {
+    fontSize: FontSize.sm,
+    marginBottom: Spacing.lg,
+  },
+  stockInfoText: {
+    fontSize: FontSize.xs,
+    marginBottom: Spacing.lg,
+    marginTop: -Spacing.md,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

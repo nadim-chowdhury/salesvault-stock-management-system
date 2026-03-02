@@ -7,17 +7,18 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  useColorScheme,
   RefreshControl,
   Modal,
   TextInput,
   ScrollView,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -49,6 +50,12 @@ export default function SalesTargetsScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { user: currentUser, isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [targets, setTargets] = useState<SalesTarget[]>([]);
   const [loading, setLoading] = useState(true);
@@ -235,9 +242,25 @@ export default function SalesTargetsScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Sales Targets" showBack />
+      <PageHeader
+        title="Sales Targets"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
-      <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         {/* Targets List */}
         <FlatList
           data={targets}
@@ -606,6 +629,7 @@ export default function SalesTargetsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   fab: {
     position: "absolute",
@@ -682,7 +706,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: Spacing["3xl"],
   },
-  modalOverlay: { flex: 1, justifyContent: "flex-end" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
   modalContent: {
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
@@ -729,6 +757,13 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: "#FFF",
     fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontWeight: "bold",
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

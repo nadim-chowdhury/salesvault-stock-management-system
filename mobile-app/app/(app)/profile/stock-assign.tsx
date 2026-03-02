@@ -4,15 +4,17 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   Alert,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
+import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -30,6 +32,12 @@ export default function AssignStockScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const { setThemeMode } = useThemeStore();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [products, setProducts] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -238,7 +246,23 @@ export default function AssignStockScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Assign Stock" showBack />
+      <PageHeader
+        title="Assign Stock"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
@@ -489,4 +513,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   previewLine: { fontSize: FontSize.sm, lineHeight: 22 },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
+  },
 });

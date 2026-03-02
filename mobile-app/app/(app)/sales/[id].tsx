@@ -4,16 +4,18 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
   Alert,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -32,7 +34,13 @@ export default function SaleDetailScreen() {
   const colors = Colors[scheme];
   const { id } = useLocalSearchParams();
   const { user, isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [sale, setSale] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -131,7 +139,23 @@ export default function SaleDetailScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Sale Details" showBack />
+      <PageHeader
+        title="Sale Details"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
@@ -469,5 +493,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     textAlign: "center",
     marginTop: Spacing.sm,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

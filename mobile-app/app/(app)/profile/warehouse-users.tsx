@@ -7,17 +7,18 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  useColorScheme,
   RefreshControl,
   Modal,
   ScrollView,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -62,6 +63,12 @@ export default function WarehouseUsersScreen() {
   const colors = Colors[scheme];
   const router = useRouter();
   const { user: currentUser, isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(
@@ -228,7 +235,23 @@ export default function WarehouseUsersScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Warehouse Users" showBack />
+      <PageHeader
+        title="Warehouse Users"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         {/* Warehouse Selector */}
@@ -691,5 +714,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

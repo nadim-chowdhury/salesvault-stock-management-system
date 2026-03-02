@@ -6,8 +6,8 @@ import {
   StyleSheet,
   TextInputProps,
   TouchableOpacity,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Colors,

@@ -1,6 +1,7 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { useColorScheme, Platform } from "react-native";
+import { Platform } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../src/stores/auth-store";
 import {

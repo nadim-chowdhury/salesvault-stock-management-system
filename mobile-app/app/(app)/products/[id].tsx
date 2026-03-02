@@ -4,16 +4,18 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   Alert,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -33,8 +35,14 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
   const isAdmin = user?.role === "ADMIN";
   const canEdit = isAdmin || user?.role === "MANAGER";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -163,7 +171,23 @@ export default function ProductDetailScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Product Details" showBack />
+      <PageHeader
+        title="Product Details"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
@@ -379,7 +403,7 @@ export default function ProductDetailScreen() {
                       : "checkmark-circle-outline"
                   }
                   size={18}
-                  color={product.is_active ? undefined : "#FFF"}
+                  color={product.is_active ? colors.danger : "#FFF"}
                 />
               }
               style={{ marginBottom: Spacing.sm }}
@@ -499,4 +523,11 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: FontSize.sm, flex: 1 },
   infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
   actionsSection: { marginTop: Spacing.sm },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
+  },
 });

@@ -7,14 +7,15 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
-  useColorScheme,
   ActivityIndicator,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -32,6 +33,12 @@ export default function ActivityLogScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,7 +234,23 @@ export default function ActivityLogScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Activity" showBack />
+      <PageHeader
+        title="Activity"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <View
@@ -414,4 +437,11 @@ const styles = StyleSheet.create({
   ip: { fontSize: FontSize.xs, marginTop: 2 },
   empty: { alignItems: "center", paddingTop: Spacing["5xl"] },
   emptyText: { fontSize: FontSize.md, marginTop: Spacing.md },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
+  },
 });

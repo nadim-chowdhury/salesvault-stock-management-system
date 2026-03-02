@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  useColorScheme,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -39,13 +34,17 @@ export default function PageHeader({
         ]}
       >
         <View style={styles.sideContainer}>
-          {showBack && (
+          {showBack ? (
             <TouchableOpacity
               onPress={() => router.back()}
               style={styles.backBtn}
               activeOpacity={0.7}
             >
               <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.backBtn} activeOpacity={0.7}>
+              <Ionicons name="menu" size={32} color="#FFFFFF" />
             </TouchableOpacity>
           )}
         </View>

@@ -4,14 +4,15 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   Alert,
   TouchableOpacity,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -28,8 +29,14 @@ export default function ProfileScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { user, logout } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
   const router = useRouter();
   const isAdmin = user?.role === "ADMIN";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to sign out?", [
@@ -43,12 +50,29 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Profile" />
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.surface }]}
-        contentContainerStyle={styles.content}
-      >
-        {/* User Info */}
+      <PageHeader
+        title="Profile"
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
+
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+        >
+          {/* User Info */}
         <View style={styles.profileHeader}>
           <View
             style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}
@@ -137,6 +161,7 @@ export default function ProfileScreen() {
           SalesVault v1.0.0
         </Text>
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -171,6 +196,7 @@ function MenuItem({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mainContent: { flex: 1 },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
   profileHeader: { alignItems: "center", marginBottom: Spacing["3xl"] },
   avatar: {
@@ -203,5 +229,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: FontSize.xs,
     marginTop: Spacing.xl,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

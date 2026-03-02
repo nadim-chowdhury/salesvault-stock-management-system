@@ -5,16 +5,17 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  useColorScheme,
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuthStore } from "../../src/stores/auth-store";
+import { useThemeStore } from "../../src/stores/theme-store";
 import api from "../../src/services/api";
 import { Endpoints } from "../../src/constants/api";
 import {
@@ -34,8 +35,14 @@ export default function DashboardScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const { user, isAuthenticated } = useAuthStore();
+  const { themeMode, setThemeMode } = useThemeStore();
   const router = useRouter();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -72,9 +79,18 @@ export default function DashboardScreen() {
   if (loading) {
     return (
       <SafeAreaView
-        style={[styles.center, { backgroundColor: colors.surface }]}
+        style={[styles.container, { backgroundColor: colors.primary }]}
+        edges={["top"]}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <PageHeader title="Dashboard" />
+        <View
+          style={[
+            styles.center,
+            { backgroundColor: colors.surface, flex: 1 },
+          ]}
+        >
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -84,7 +100,22 @@ export default function DashboardScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Dashboard" />
+      <PageHeader
+        title="Dashboard"
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         <ScrollView
@@ -457,4 +488,11 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   menuLabel: { flex: 1, fontSize: FontSize.md, fontWeight: FontWeight.medium },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
+  },
 });

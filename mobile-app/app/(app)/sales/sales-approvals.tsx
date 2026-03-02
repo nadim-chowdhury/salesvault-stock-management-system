@@ -7,15 +7,16 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  useColorScheme,
   RefreshControl,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -49,6 +50,12 @@ export default function SalesApprovalsScreen() {
   const colors = Colors[scheme];
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,12 +194,16 @@ export default function SalesApprovalsScreen() {
     { key: "ALL", label: "All" },
   ];
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <SafeAreaView
-        style={[styles.center, { backgroundColor: colors.surface }]}
+        style={[styles.container, { backgroundColor: colors.primary }]}
+        edges={["top"]}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <PageHeader title="Sale Approvals" showBack />
+        <View style={[styles.center, { backgroundColor: colors.surface, flex: 1 }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -202,9 +213,25 @@ export default function SalesApprovalsScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Sale Approvals" showBack />
+      <PageHeader
+        title="Sale Approvals"
+        showBack
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
-      <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         {/* Filter Tabs */}
         <View
           style={[
@@ -245,154 +272,155 @@ export default function SalesApprovalsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
 
-      {/* Sales List */}
-      <FlatList
-        data={sales}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => {
-          const statusStyle = getStatusStyle(item.status);
-          const isProcessing = actionLoading === item.id;
-          return (
-            <TouchableOpacity
-              style={[
-                styles.saleCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                Shadow.sm,
-              ]}
-              onPress={() => router.push(`/sales/${item.id}`)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.saleHeader}>
-                <View style={styles.saleInfo}>
-                  <Text style={[styles.customerName, { color: colors.text }]}>
-                    {item.customer_name || "Walk-in Customer"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.salespersonText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    by {item.salesperson?.name || "Unknown"}
-                  </Text>
-                  {item.warehouse && (
-                    <View style={styles.warehouseTag}>
+        {/* Sales List */}
+        <FlatList
+          data={sales}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          }
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => {
+            const statusStyle = getStatusStyle(item.status);
+            const isProcessing = actionLoading === item.id;
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.saleCard,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  Shadow.sm,
+                ]}
+                onPress={() => router.push(`/sales/${item.id}`)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.saleHeader}>
+                  <View style={styles.saleInfo}>
+                    <Text style={[styles.customerName, { color: colors.text }]}>
+                      {item.customer_name || "Walk-in Customer"}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.salespersonText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      by {item.salesperson?.name || "Unknown"}
+                    </Text>
+                    {item.warehouse && (
+                      <View style={styles.warehouseTag}>
+                        <Ionicons
+                          name="business-outline"
+                          size={11}
+                          color={colors.textMuted}
+                        />
+                        <Text
+                          style={[
+                            styles.warehouseName,
+                            { color: colors.textMuted },
+                          ]}
+                        >
+                          {item.warehouse.name}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.saleAmountSection}>
+                    <Text style={[styles.saleAmount, { color: colors.text }]}>
+                      {formatCurrency(item.total_amount)}
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: statusStyle.bg },
+                      ]}
+                    >
                       <Ionicons
-                        name="business-outline"
-                        size={11}
-                        color={colors.textMuted}
+                        name={statusStyle.icon}
+                        size={12}
+                        color={statusStyle.text}
                       />
                       <Text
-                        style={[
-                          styles.warehouseName,
-                          { color: colors.textMuted },
-                        ]}
+                        style={[styles.statusText, { color: statusStyle.text }]}
                       >
-                        {item.warehouse.name}
+                        {item.status.replace(/_/g, " ")}
                       </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.saleFooter}>
+                  <Text style={[styles.dateText, { color: colors.textMuted }]}>
+                    {formatDate(item.created_at)}
+                  </Text>
+
+                  {item.status === "PENDING_APPROVAL" && (
+                    <View style={styles.actionButtons}>
+                      {isProcessing ? (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      ) : (
+                        <>
+                          <TouchableOpacity
+                            style={[
+                              styles.actionBtn,
+                              { backgroundColor: colors.successLight },
+                            ]}
+                            onPress={() => approveSale(item.id)}
+                          >
+                            <Ionicons
+                              name="checkmark"
+                              size={18}
+                              color={colors.success}
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[
+                              styles.actionBtn,
+                              { backgroundColor: colors.dangerLight },
+                            ]}
+                            onPress={() => rejectSale(item.id)}
+                          >
+                            <Ionicons
+                              name="close"
+                              size={18}
+                              color={colors.danger}
+                            />
+                          </TouchableOpacity>
+                        </>
+                      )}
                     </View>
                   )}
                 </View>
-                <View style={styles.saleAmountSection}>
-                  <Text style={[styles.saleAmount, { color: colors.text }]}>
-                    {formatCurrency(item.total_amount)}
-                  </Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: statusStyle.bg },
-                    ]}
-                  >
-                    <Ionicons
-                      name={statusStyle.icon}
-                      size={12}
-                      color={statusStyle.text}
-                    />
-                    <Text
-                      style={[styles.statusText, { color: statusStyle.text }]}
-                    >
-                      {item.status.replace("_", " ")}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.saleFooter}>
-                <Text style={[styles.dateText, { color: colors.textMuted }]}>
-                  {formatDate(item.created_at)}
-                </Text>
-
-                {item.status === "PENDING_APPROVAL" && (
-                  <View style={styles.actionButtons}>
-                    {isProcessing ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    ) : (
-                      <>
-                        <TouchableOpacity
-                          style={[
-                            styles.actionBtn,
-                            { backgroundColor: colors.successLight },
-                          ]}
-                          onPress={() => approveSale(item.id)}
-                        >
-                          <Ionicons
-                            name="checkmark"
-                            size={18}
-                            color={colors.success}
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.actionBtn,
-                            { backgroundColor: colors.dangerLight },
-                          ]}
-                          onPress={() => rejectSale(item.id)}
-                        >
-                          <Ionicons
-                            name="close"
-                            size={18}
-                            color={colors.danger}
-                          />
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons
-              name="receipt-outline"
-              size={48}
-              color={colors.textMuted}
-            />
-            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
-              No Sales Found
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-              {activeTab === "PENDING_APPROVAL"
-                ? "No pending sales awaiting approval"
-                : `No ${activeTab.toLowerCase().replace("_", " ")} sales`}
-            </Text>
-          </View>
-        }
-      />
+              </TouchableOpacity>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="receipt-outline"
+                size={48}
+                color={colors.textMuted}
+              />
+              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+                No Sales Found
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                {activeTab === "PENDING_APPROVAL"
+                  ? "No pending sales awaiting approval"
+                  : `No ${activeTab.toLowerCase().replace("_", " ")} sales`}
+              </Text>
+            </View>
+          }
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  mainContent: { flex: 1 },
+  center: { justifyContent: "center", alignItems: "center" },
   tabContainer: {
     flexDirection: "row",
     borderBottomWidth: 1,
@@ -466,5 +494,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     textAlign: "center",
     paddingHorizontal: Spacing["3xl"],
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });

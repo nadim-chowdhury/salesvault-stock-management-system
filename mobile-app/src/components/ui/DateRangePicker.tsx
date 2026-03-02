@@ -7,8 +7,8 @@ import {
   Modal,
   TextInput,
   Platform,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Colors,

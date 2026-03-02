@@ -7,14 +7,15 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
-  useColorScheme,
   ActivityIndicator,
 } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
 import { useAuthStore } from "../../../src/stores/auth-store";
+import { useThemeStore } from "../../../src/stores/theme-store";
 import {
   Colors,
   Spacing,
@@ -35,7 +36,13 @@ export default function WarehousesScreen() {
   const colors = Colors[scheme];
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
+  const { setThemeMode } = useThemeStore();
   const canCreate = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  const toggleTheme = () => {
+    const nextMode = scheme === "light" ? "dark" : "light";
+    setThemeMode(nextMode);
+  };
 
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,7 +174,7 @@ export default function WarehousesScreen() {
       ]}
       onPress={() =>
         router.push({
-          pathname: "/(app)/profile/warehouse-detail",
+          pathname: "/(app)/warehouses/[id]",
           params: { id: item.id },
         })
       }
@@ -210,7 +217,22 @@ export default function WarehousesScreen() {
       style={[styles.container, { backgroundColor: colors.primary }]}
       edges={["top"]}
     >
-      <PageHeader title="Warehouses" />
+      <PageHeader
+        title="Warehouses"
+        right={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={scheme === "light" ? "moon" : "sunny"}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
         {/* Search */}
@@ -394,7 +416,7 @@ export default function WarehousesScreen() {
       {canCreate && (
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: colors.primary }]}
-          onPress={() => router.push("/(app)/profile/warehouse-create")}
+          onPress={() => router.push("/(app)/warehouses/create")}
           activeOpacity={0.8}
         >
           <Ionicons name="add" size={28} color="#FFF" />
@@ -515,5 +537,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
+  },
+  themeToggle: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -Spacing.sm,
   },
 });
