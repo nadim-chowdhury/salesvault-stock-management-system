@@ -107,7 +107,9 @@ export default function CreateUserScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
@@ -117,179 +119,187 @@ export default function CreateUserScreen() {
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
           >
-          {/* Header */}
-          <View style={styles.headerSection}>
-            <View
-              style={[
-                styles.iconCircle,
-                { backgroundColor: colors.primary + "15" },
-              ]}
-            >
-              <Ionicons
-                name="person-add-outline"
-                size={28}
-                color={colors.primary}
-              />
-            </View>
-            <Text style={[styles.title, { color: colors.text }]}>New User</Text>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-              Add a new team member to SalesVault
-            </Text>
-          </View>
-
-          {/* Form Card */}
-          <View
-            style={[
-              styles.formCard,
-              Shadow.sm,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.borderLight,
-              },
-            ]}
-          >
-            <Input
-              label="Full Name *"
-              placeholder="e.g. John Doe"
-              value={name}
-              onChangeText={setName}
-              leftIcon="person-outline"
-            />
-            <Input
-              label="Email *"
-              placeholder="e.g. john@company.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon="mail-outline"
-            />
-            <Input
-              label="Password *"
-              placeholder="Min 8 chars, A-z, 0-9, @$!%*?&"
-              value={password}
-              onChangeText={setPassword}
-              isPassword
-              leftIcon="lock-closed-outline"
-            />
-          </View>
-
-          {/* Role Selection */}
-          <View style={styles.sectionWrapper}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="shield-checkmark"
-                size={16}
-                color={colors.primary}
-              />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Role
+            {/* Header */}
+            <View style={styles.headerSection}>
+              <View
+                style={[
+                  styles.iconCircle,
+                  { backgroundColor: colors.primary + "15" },
+                ]}
+              >
+                <Ionicons
+                  name="person-add-outline"
+                  size={28}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={[styles.title, { color: colors.text }]}>
+                New User
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                Add a new team member to SalesVault
               </Text>
             </View>
-            <Button
-              title="Salesperson"
-              variant={role === "SALESPERSON" ? "primary" : "secondary"}
-              size="md"
-              onPress={() => setRole("SALESPERSON")}
-              icon={
-                <Ionicons
-                  name="person-outline"
-                  size={16}
-                  color={role === "SALESPERSON" ? "#FFF" : colors.textSecondary}
-                />
-              }
-              style={{ marginBottom: Spacing.sm }}
-            />
-            <View style={styles.roleRow}>
-              <Button
-                title="Manager"
-                variant={role === "MANAGER" ? "primary" : "secondary"}
-                size="md"
-                fullWidth={false}
-                onPress={() => setRole("MANAGER")}
-                icon={
-                  <Ionicons
-                    name="briefcase-outline"
-                    size={16}
-                    color={role === "MANAGER" ? "#FFF" : colors.textSecondary}
-                  />
-                }
-                style={{ flex: 1 }}
-              />
-              <Button
-                title="Admin"
-                variant={role === "ADMIN" ? "primary" : "secondary"}
-                size="md"
-                fullWidth={false}
-                onPress={() => setRole("ADMIN")}
-                icon={
-                  <Ionicons
-                    name="shield-outline"
-                    size={16}
-                    color={role === "ADMIN" ? "#FFF" : colors.textSecondary}
-                  />
-                }
-                style={{ flex: 1 }}
-              />
-            </View>
-          </View>
 
-          {/* Preview */}
-          {name && (
+            {/* Form Card */}
             <View
               style={[
-                styles.previewCard,
+                styles.formCard,
+                Shadow.sm,
                 {
-                  backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderLight,
                 },
               ]}
             >
-              <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
-                Preview
-              </Text>
-              <View style={styles.previewRow}>
-                <View
-                  style={[
-                    styles.previewAvatar,
-                    { backgroundColor: colors.primary + "20" },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.previewAvatarText,
-                      { color: colors.primary },
-                    ]}
-                  >
-                    {name.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={[styles.previewName, { color: colors.text }]}>
-                    {name || "User Name"}
-                  </Text>
-                  <Text
-                    style={[styles.previewEmail, { color: colors.textMuted }]}
-                  >
-                    {email || "email@example.com"}
-                  </Text>
-                  <Text style={[styles.previewRole, { color: colors.primary }]}>
-                    {role}
-                  </Text>
-                </View>
+              <Input
+                label="Full Name *"
+                placeholder="e.g. John Doe"
+                value={name}
+                onChangeText={setName}
+                leftIcon="person-outline"
+              />
+              <Input
+                label="Email *"
+                placeholder="e.g. john@company.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                leftIcon="mail-outline"
+              />
+              <Input
+                label="Password *"
+                placeholder="Min 8 chars, A-z, 0-9, @$!%*?&"
+                value={password}
+                onChangeText={setPassword}
+                isPassword
+                leftIcon="lock-closed-outline"
+              />
+            </View>
+
+            {/* Role Selection */}
+            <View style={styles.sectionWrapper}>
+              <View style={styles.sectionHeader}>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Role
+                </Text>
+              </View>
+              <Button
+                title="Salesperson"
+                variant={role === "SALESPERSON" ? "primary" : "secondary"}
+                size="md"
+                onPress={() => setRole("SALESPERSON")}
+                icon={
+                  <Ionicons
+                    name="person-outline"
+                    size={16}
+                    color={
+                      role === "SALESPERSON" ? "#FFF" : colors.textSecondary
+                    }
+                  />
+                }
+                style={{ marginBottom: Spacing.sm }}
+              />
+              <View style={styles.roleRow}>
+                <Button
+                  title="Manager"
+                  variant={role === "MANAGER" ? "primary" : "secondary"}
+                  size="md"
+                  fullWidth={false}
+                  onPress={() => setRole("MANAGER")}
+                  icon={
+                    <Ionicons
+                      name="briefcase-outline"
+                      size={16}
+                      color={role === "MANAGER" ? "#FFF" : colors.textSecondary}
+                    />
+                  }
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title="Admin"
+                  variant={role === "ADMIN" ? "primary" : "secondary"}
+                  size="md"
+                  fullWidth={false}
+                  onPress={() => setRole("ADMIN")}
+                  icon={
+                    <Ionicons
+                      name="shield-outline"
+                      size={16}
+                      color={role === "ADMIN" ? "#FFF" : colors.textSecondary}
+                    />
+                  }
+                  style={{ flex: 1 }}
+                />
               </View>
             </View>
-          )}
 
-          <Button
-            title="Create User"
-            onPress={handleCreate}
-            loading={loading}
-            disabled={!name.trim() || !email.trim() || !password.trim()}
-            size="lg"
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
+            {/* Preview */}
+            {name && (
+              <View
+                style={[
+                  styles.previewCard,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.previewTitle, { color: colors.textMuted }]}
+                >
+                  Preview
+                </Text>
+                <View style={styles.previewRow}>
+                  <View
+                    style={[
+                      styles.previewAvatar,
+                      { backgroundColor: colors.primary + "20" },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.previewAvatarText,
+                        { color: colors.primary },
+                      ]}
+                    >
+                      {name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={[styles.previewName, { color: colors.text }]}>
+                      {name || "User Name"}
+                    </Text>
+                    <Text
+                      style={[styles.previewEmail, { color: colors.textMuted }]}
+                    >
+                      {email || "email@example.com"}
+                    </Text>
+                    <Text
+                      style={[styles.previewRole, { color: colors.primary }]}
+                    >
+                      {role}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            <Button
+              title="Create User"
+              onPress={handleCreate}
+              loading={loading}
+              disabled={!name.trim() || !email.trim() || !password.trim()}
+              size="lg"
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
   );

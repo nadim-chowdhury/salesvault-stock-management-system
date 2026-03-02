@@ -108,47 +108,39 @@ export default function UserDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      "Delete User",
-      "This action cannot be undone. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setActionLoading("delete");
-            try {
-              await api.delete(`${Endpoints.USERS}/${id}`);
-              Alert.alert("Success", "User deleted successfully", [
-                { text: "OK", onPress: () => router.back() },
-              ]);
-            } catch (err: any) {
-              Alert.alert(
-                "Error",
-                err.response?.data?.message || "Failed to delete user",
-              );
-            } finally {
-              setActionLoading("");
-            }
-          },
+    Alert.alert("Delete User", "This action cannot be undone. Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          setActionLoading("delete");
+          try {
+            await api.delete(`${Endpoints.USERS}/${id}`);
+            Alert.alert("Success", "User deleted successfully", [
+              { text: "OK", onPress: () => router.back() },
+            ]);
+          } catch (err: any) {
+            Alert.alert(
+              "Error",
+              err.response?.data?.message || "Failed to delete user",
+            );
+          } finally {
+            setActionLoading("");
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleResetPassword = () => {
-    Alert.alert(
-      "Reset Password",
-      "Send password reset email to user?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send",
-          onPress: () => Alert.alert("Info", "Feature coming soon"),
-        },
-      ],
-    );
+    Alert.alert("Reset Password", "Send password reset email to user?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Send",
+        onPress: () => Alert.alert("Info", "Feature coming soon"),
+      },
+    ]);
   };
 
   if (loading) {
@@ -194,7 +186,9 @@ export default function UserDetailScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}

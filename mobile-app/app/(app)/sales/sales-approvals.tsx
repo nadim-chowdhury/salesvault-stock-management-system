@@ -201,7 +201,9 @@ export default function SalesApprovalsScreen() {
         edges={["top"]}
       >
         <PageHeader title="Sale Approvals" showBack />
-        <View style={[styles.center, { backgroundColor: colors.surface, flex: 1 }]}>
+        <View
+          style={[styles.center, { backgroundColor: colors.surface, flex: 1 }]}
+        >
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
@@ -231,7 +233,9 @@ export default function SalesApprovalsScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         {/* Filter Tabs */}
         <View
           style={[
@@ -278,7 +282,11 @@ export default function SalesApprovalsScreen() {
           data={sales}
           keyExtractor={(item) => item.id}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
           }
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => {
@@ -288,7 +296,10 @@ export default function SalesApprovalsScreen() {
               <TouchableOpacity
                 style={[
                   styles.saleCard,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
                   Shadow.sm,
                 ]}
                 onPress={() => router.push(`/sales/${item.id}`)}
@@ -357,7 +368,10 @@ export default function SalesApprovalsScreen() {
                   {item.status === "PENDING_APPROVAL" && (
                     <View style={styles.actionButtons}>
                       {isProcessing ? (
-                        <ActivityIndicator size="small" color={colors.primary} />
+                        <ActivityIndicator
+                          size="small"
+                          color={colors.primary}
+                        />
                       ) : (
                         <>
                           <TouchableOpacity
@@ -401,7 +415,9 @@ export default function SalesApprovalsScreen() {
                 size={48}
                 color={colors.textMuted}
               />
-              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.emptyTitle, { color: colors.textSecondary }]}
+              >
                 No Sales Found
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>

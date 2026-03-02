@@ -255,7 +255,9 @@ export default function CreateSaleScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}

@@ -412,7 +412,9 @@ export default function StockScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         {/* Tabs */}
         <View
           style={[
@@ -485,7 +487,11 @@ export default function StockScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={colors.textMuted}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -503,7 +509,7 @@ export default function StockScreen() {
                     backgroundColor: isActive
                       ? colors.primary
                       : colors.surfaceSecondary,
-                      borderColor: isActive ? colors.primary : colors.border,
+                    borderColor: isActive ? colors.primary : colors.border,
                   },
                 ]}
                 onPress={() => setStockFilter(chip.value)}
@@ -587,9 +593,7 @@ export default function StockScreen() {
                     style={[
                       styles.sortChipText,
                       {
-                        color: isActive
-                          ? colors.primary
-                          : colors.textSecondary,
+                        color: isActive ? colors.primary : colors.textSecondary,
                       },
                     ]}
                   >

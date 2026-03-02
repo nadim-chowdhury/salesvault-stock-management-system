@@ -260,7 +260,9 @@ export default function SalesTargetsScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         {/* Targets List */}
         <FlatList
           data={targets}

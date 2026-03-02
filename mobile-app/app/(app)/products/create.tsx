@@ -103,132 +103,136 @@ export default function CreateProductScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: colors.primary + "15" },
-            ]}
-          >
-            <Ionicons name="cube-outline" size={28} color={colors.primary} />
+          {/* Header */}
+          <View style={styles.headerSection}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons name="cube-outline" size={28} color={colors.primary} />
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>
+              New Product
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              Add a new product to your catalog
+            </Text>
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>
-            New Product
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Add a new product to your catalog
-          </Text>
-        </View>
 
-        {/* Form Card */}
-        <View
-          style={[
-            styles.formCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <Input
-            label="Product Name *"
-            placeholder="e.g. Widget Pro"
-            value={name}
-            onChangeText={setName}
-            leftIcon="cube-outline"
-          />
-          <Input
-            label="SKU *"
-            placeholder="e.g. WGT-PRO-001"
-            value={sku}
-            onChangeText={setSku}
-            autoCapitalize="characters"
-            leftIcon="barcode-outline"
-          />
-          <Input
-            label="Selling Price (৳) *"
-            placeholder="0.00"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="decimal-pad"
-            leftIcon="pricetag-outline"
-          />
-          <Input
-            label="Cost Price (৳)"
-            placeholder="0.00"
-            value={costPrice}
-            onChangeText={setCostPrice}
-            keyboardType="decimal-pad"
-            leftIcon="wallet-outline"
-          />
-          <Input
-            label="Description"
-            placeholder="Product details..."
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-
-        {/* Preview */}
-        {(name || price) && (
+          {/* Form Card */}
           <View
             style={[
-              styles.previewCard,
+              styles.formCard,
+              Shadow.sm,
               {
-                backgroundColor: colors.surfaceSecondary,
-                borderColor: colors.border,
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
               },
             ]}
           >
-            <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
-              Preview
-            </Text>
-            <Text style={[styles.previewName, { color: colors.text }]}>
-              {name || "Product Name"}
-            </Text>
-            {sku ? (
-              <Text style={[styles.previewSku, { color: colors.textMuted }]}>
-                SKU: {sku.toUpperCase()}
+            <Input
+              label="Product Name *"
+              placeholder="e.g. Widget Pro"
+              value={name}
+              onChangeText={setName}
+              leftIcon="cube-outline"
+            />
+            <Input
+              label="SKU *"
+              placeholder="e.g. WGT-PRO-001"
+              value={sku}
+              onChangeText={setSku}
+              autoCapitalize="characters"
+              leftIcon="barcode-outline"
+            />
+            <Input
+              label="Selling Price (৳) *"
+              placeholder="0.00"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              leftIcon="pricetag-outline"
+            />
+            <Input
+              label="Cost Price (৳)"
+              placeholder="0.00"
+              value={costPrice}
+              onChangeText={setCostPrice}
+              keyboardType="decimal-pad"
+              leftIcon="wallet-outline"
+            />
+            <Input
+              label="Description"
+              placeholder="Product details..."
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Preview */}
+          {(name || price) && (
+            <View
+              style={[
+                styles.previewCard,
+                {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
+                Preview
               </Text>
-            ) : null}
-            <View style={styles.previewPriceRow}>
-              {price ? (
-                <Text style={[styles.previewPrice, { color: colors.primary }]}>
-                  ৳{parseFloat(price || "0").toLocaleString()}
+              <Text style={[styles.previewName, { color: colors.text }]}>
+                {name || "Product Name"}
+              </Text>
+              {sku ? (
+                <Text style={[styles.previewSku, { color: colors.textMuted }]}>
+                  SKU: {sku.toUpperCase()}
                 </Text>
               ) : null}
-              {margin !== null && !isNaN(margin) && (
-                <Text
-                  style={[
-                    styles.previewMargin,
-                    { color: margin >= 0 ? colors.success : colors.danger },
-                  ]}
-                >
-                  Margin: ৳{margin.toLocaleString()}
-                </Text>
-              )}
+              <View style={styles.previewPriceRow}>
+                {price ? (
+                  <Text
+                    style={[styles.previewPrice, { color: colors.primary }]}
+                  >
+                    ৳{parseFloat(price || "0").toLocaleString()}
+                  </Text>
+                ) : null}
+                {margin !== null && !isNaN(margin) && (
+                  <Text
+                    style={[
+                      styles.previewMargin,
+                      { color: margin >= 0 ? colors.success : colors.danger },
+                    ]}
+                  >
+                    Margin: ৳{margin.toLocaleString()}
+                  </Text>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        <Button
-          title="Create Product"
-          onPress={handleCreate}
-          loading={loading}
-          disabled={!name.trim() || !sku.trim() || !price.trim()}
-          size="lg"
-        />
-      </ScrollView>
+          <Button
+            title="Create Product"
+            onPress={handleCreate}
+            loading={loading}
+            disabled={!name.trim() || !sku.trim() || !price.trim()}
+            size="lg"
+          />
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

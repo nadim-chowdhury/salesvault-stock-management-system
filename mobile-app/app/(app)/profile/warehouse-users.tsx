@@ -253,7 +253,9 @@ export default function WarehouseUsersScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         {/* Warehouse Selector */}
         <View style={{ height: 56 }}>
           <ScrollView
@@ -306,247 +308,262 @@ export default function WarehouseUsersScreen() {
           </ScrollView>
         </View>
 
-      {!selectedWarehouse ? (
-        <View style={styles.emptyState}>
-          <Ionicons
-            name="business-outline"
-            size={48}
-            color={colors.textMuted}
-          />
-          <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
-            Select a Warehouse
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-            Choose a warehouse to view and manage assigned users
-          </Text>
-        </View>
-      ) : (
-        <>
-          {/* Section Header */}
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Assigned Users ({assignedUsers.length})
+        {!selectedWarehouse ? (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="business-outline"
+              size={48}
+              color={colors.textMuted}
+            />
+            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+              Select a Warehouse
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+              Choose a warehouse to view and manage assigned users
             </Text>
           </View>
+        ) : (
+          <>
+            {/* Section Header */}
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Assigned Users ({assignedUsers.length})
+              </Text>
+            </View>
 
-          {/* Assigned Users List */}
-          <FlatList
-            data={assignedUsers}
-            keyExtractor={(item) => item.id}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => {
-              const roleBadge = getRoleBadgeColor(item.user?.role);
-              return (
-                <View
-                  style={[
-                    styles.userCard,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: colors.border,
-                    },
-                    Shadow.sm,
-                  ]}
-                >
+            {/* Assigned Users List */}
+            <FlatList
+              data={assignedUsers}
+              keyExtractor={(item) => item.id}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+              contentContainerStyle={styles.listContent}
+              renderItem={({ item }) => {
+                const roleBadge = getRoleBadgeColor(item.user?.role);
+                return (
                   <View
                     style={[
-                      styles.userAvatar,
-                      { backgroundColor: colors.primaryLight + "20" },
+                      styles.userCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                      },
+                      Shadow.sm,
                     ]}
                   >
-                    <Text
-                      style={[styles.userAvatarText, { color: colors.primary }]}
-                    >
-                      {item.user?.name?.charAt(0)?.toUpperCase() || "?"}
-                    </Text>
-                  </View>
-                  <View style={styles.userInfo}>
-                    <Text style={[styles.userName, { color: colors.text }]}>
-                      {item.user?.name}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.userEmail,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      {item.user?.email}
-                    </Text>
                     <View
                       style={[
-                        styles.roleBadge,
-                        { backgroundColor: roleBadge.bg },
+                        styles.userAvatar,
+                        { backgroundColor: colors.primaryLight + "20" },
                       ]}
                     >
                       <Text
                         style={[
-                          styles.roleBadgeText,
-                          { color: roleBadge.text },
+                          styles.userAvatarText,
+                          { color: colors.primary },
                         ]}
                       >
-                        {item.user?.role}
+                        {item.user?.name?.charAt(0)?.toUpperCase() || "?"}
                       </Text>
                     </View>
-                  </View>
-                  {(isAdmin || isManager) && (
-                    <TouchableOpacity
-                      onPress={() => removeUser(item.user_id, item.user?.name)}
-                      style={[
-                        styles.removeBtn,
-                        { backgroundColor: colors.dangerLight },
-                      ]}
-                    >
-                      <Ionicons name="close" size={18} color={colors.danger} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              );
-            }}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Ionicons
-                  name="people-outline"
-                  size={48}
-                  color={colors.textMuted}
-                />
-                <Text
-                  style={[styles.emptyTitle, { color: colors.textSecondary }]}
-                >
-                  No Users Assigned
-                </Text>
-                <Text
-                  style={[styles.emptySubtitle, { color: colors.textMuted }]}
-                >
-                  Assign salespersons or managers to this warehouse
-                </Text>
-              </View>
-            }
-          />
-        </>
-      )}
-
-      {/* Assign User Modal */}
-      <Modal visible={showAssignModal} animationType="slide" transparent>
-        <View
-          style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}
-        >
-          <View
-            style={[styles.modalContent, { backgroundColor: colors.surface }]}
-          >
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Assign User to {selectedWarehouse?.name}
-              </Text>
-              <TouchableOpacity onPress={() => setShowAssignModal(false)}>
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            {assigning ? (
-              <ActivityIndicator
-                size="large"
-                color={colors.primary}
-                style={{ marginVertical: Spacing["3xl"] }}
-              />
-            ) : (
-              <FlatList
-                data={unassignedUsers}
-                keyExtractor={(item) => item.id}
-                style={styles.modalList}
-                renderItem={({ item }) => {
-                  const roleBadge = getRoleBadgeColor(item.role);
-                  return (
-                    <TouchableOpacity
-                      style={[
-                        styles.assignableUser,
-                        { borderBottomColor: colors.border },
-                      ]}
-                      onPress={() => assignUser(item.id)}
-                    >
+                    <View style={styles.userInfo}>
+                      <Text style={[styles.userName, { color: colors.text }]}>
+                        {item.user?.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.userEmail,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {item.user?.email}
+                      </Text>
                       <View
                         style={[
-                          styles.userAvatar,
-                          { backgroundColor: colors.primaryLight + "20" },
+                          styles.roleBadge,
+                          { backgroundColor: roleBadge.bg },
                         ]}
                       >
                         <Text
                           style={[
-                            styles.userAvatarText,
-                            { color: colors.primary },
+                            styles.roleBadgeText,
+                            { color: roleBadge.text },
                           ]}
                         >
-                          {item.name?.charAt(0)?.toUpperCase()}
+                          {item.user?.role}
                         </Text>
                       </View>
-                      <View style={styles.userInfo}>
-                        <Text style={[styles.userName, { color: colors.text }]}>
-                          {item.name}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.userEmail,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          {item.email}
-                        </Text>
+                    </View>
+                    {(isAdmin || isManager) && (
+                      <TouchableOpacity
+                        onPress={() =>
+                          removeUser(item.user_id, item.user?.name)
+                        }
+                        style={[
+                          styles.removeBtn,
+                          { backgroundColor: colors.dangerLight },
+                        ]}
+                      >
+                        <Ionicons
+                          name="close"
+                          size={18}
+                          color={colors.danger}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Ionicons
+                    name="people-outline"
+                    size={48}
+                    color={colors.textMuted}
+                  />
+                  <Text
+                    style={[styles.emptyTitle, { color: colors.textSecondary }]}
+                  >
+                    No Users Assigned
+                  </Text>
+                  <Text
+                    style={[styles.emptySubtitle, { color: colors.textMuted }]}
+                  >
+                    Assign salespersons or managers to this warehouse
+                  </Text>
+                </View>
+              }
+            />
+          </>
+        )}
+
+        {/* Assign User Modal */}
+        <Modal visible={showAssignModal} animationType="slide" transparent>
+          <View
+            style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}
+          >
+            <View
+              style={[styles.modalContent, { backgroundColor: colors.surface }]}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>
+                  Assign User to {selectedWarehouse?.name}
+                </Text>
+                <TouchableOpacity onPress={() => setShowAssignModal(false)}>
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {assigning ? (
+                <ActivityIndicator
+                  size="large"
+                  color={colors.primary}
+                  style={{ marginVertical: Spacing["3xl"] }}
+                />
+              ) : (
+                <FlatList
+                  data={unassignedUsers}
+                  keyExtractor={(item) => item.id}
+                  style={styles.modalList}
+                  renderItem={({ item }) => {
+                    const roleBadge = getRoleBadgeColor(item.role);
+                    return (
+                      <TouchableOpacity
+                        style={[
+                          styles.assignableUser,
+                          { borderBottomColor: colors.border },
+                        ]}
+                        onPress={() => assignUser(item.id)}
+                      >
                         <View
                           style={[
-                            styles.roleBadge,
-                            { backgroundColor: roleBadge.bg },
+                            styles.userAvatar,
+                            { backgroundColor: colors.primaryLight + "20" },
                           ]}
                         >
                           <Text
                             style={[
-                              styles.roleBadgeText,
-                              { color: roleBadge.text },
+                              styles.userAvatarText,
+                              { color: colors.primary },
                             ]}
                           >
-                            {item.role}
+                            {item.name?.charAt(0)?.toUpperCase()}
                           </Text>
                         </View>
-                      </View>
-                      <Ionicons
-                        name="add-circle"
-                        size={24}
-                        color={colors.success}
-                      />
-                    </TouchableOpacity>
-                  );
-                }}
-                ListEmptyComponent={
-                  <View style={styles.emptyState}>
-                    <Text
-                      style={[
-                        styles.emptyTitle,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      All Users Already Assigned
-                    </Text>
-                  </View>
-                }
-              />
-            )}
+                        <View style={styles.userInfo}>
+                          <Text
+                            style={[styles.userName, { color: colors.text }]}
+                          >
+                            {item.name}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.userEmail,
+                              { color: colors.textSecondary },
+                            ]}
+                          >
+                            {item.email}
+                          </Text>
+                          <View
+                            style={[
+                              styles.roleBadge,
+                              { backgroundColor: roleBadge.bg },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.roleBadgeText,
+                                { color: roleBadge.text },
+                              ]}
+                            >
+                              {item.role}
+                            </Text>
+                          </View>
+                        </View>
+                        <Ionicons
+                          name="add-circle"
+                          size={24}
+                          color={colors.success}
+                        />
+                      </TouchableOpacity>
+                    );
+                  }}
+                  ListEmptyComponent={
+                    <View style={styles.emptyState}>
+                      <Text
+                        style={[
+                          styles.emptyTitle,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        All Users Already Assigned
+                      </Text>
+                    </View>
+                  }
+                />
+              )}
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      {/* FAB - Assign User */}
-      {selectedWarehouse && (isAdmin || isManager) && (
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.primary }]}
-          onPress={() => {
-            fetchAvailableUsers();
-            setShowAssignModal(true);
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="person-add" size={26} color="#FFF" />
-        </TouchableOpacity>
-      )}
+        {/* FAB - Assign User */}
+        {selectedWarehouse && (isAdmin || isManager) && (
+          <TouchableOpacity
+            style={[styles.fab, { backgroundColor: colors.primary }]}
+            onPress={() => {
+              fetchAvailableUsers();
+              setShowAssignModal(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="person-add" size={26} color="#FFF" />
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );

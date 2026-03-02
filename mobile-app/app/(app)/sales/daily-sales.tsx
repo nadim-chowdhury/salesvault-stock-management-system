@@ -191,12 +191,17 @@ export default function DailySalesReportScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         {/* Date Selector */}
         <View
           style={[styles.datePicker, { borderBottomColor: colors.borderLight }]}
         >
-          <TouchableOpacity onPress={() => changeDate(-1)} style={styles.dateBtn}>
+          <TouchableOpacity
+            onPress={() => changeDate(-1)}
+            style={styles.dateBtn}
+          >
             <Ionicons name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
 
@@ -297,7 +302,9 @@ export default function DailySalesReportScreen() {
                   ]}
                   onPress={applyCustomDate}
                 >
-                  <Text style={{ color: "#FFF", fontWeight: "bold" }}>Apply</Text>
+                  <Text style={{ color: "#FFF", fontWeight: "bold" }}>
+                    Apply
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -317,7 +324,11 @@ export default function DailySalesReportScreen() {
               ]}
               onPress={() => setShowUserPicker(!showUserPicker)}
             >
-              <Ionicons name="person-outline" size={18} color={colors.primary} />
+              <Ionicons
+                name="person-outline"
+                size={18}
+                color={colors.primary}
+              />
               <Text style={[styles.userPickerText, { color: colors.text }]}>
                 {salespersonId
                   ? salespersons.find((s) => s.id === salespersonId)?.name ||
@@ -335,7 +346,10 @@ export default function DailySalesReportScreen() {
               <View
                 style={[
                   styles.userDropdown,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
                 <TouchableOpacity

@@ -255,7 +255,9 @@ export default function UsersListScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         {/* Search */}
         <View
           style={[
@@ -276,7 +278,11 @@ export default function UsersListScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={colors.textMuted}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -377,7 +383,9 @@ export default function UsersListScreen() {
                   <Text
                     style={[
                       styles.sortChipText,
-                      { color: isActive ? colors.primary : colors.textSecondary },
+                      {
+                        color: isActive ? colors.primary : colors.textSecondary,
+                      },
                     ]}
                   >
                     {opt.label}

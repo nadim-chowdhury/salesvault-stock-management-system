@@ -172,7 +172,9 @@ export default function WarehouseDetailScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
@@ -295,7 +297,9 @@ export default function WarehouseDetailScreen() {
                   onPress={handleDelete}
                   variant="danger"
                   loading={actionLoading === "delete"}
-                  icon={<Ionicons name="trash-outline" size={18} color="#FFF" />}
+                  icon={
+                    <Ionicons name="trash-outline" size={18} color="#FFF" />
+                  }
                 />
               )}
             </View>

@@ -99,7 +99,9 @@ export default function EditUserScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
@@ -109,158 +111,162 @@ export default function EditUserScreen() {
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
           >
-          {/* Header */}
-          <View style={styles.headerSection}>
-            <View
-              style={[
-                styles.iconCircle,
-                { backgroundColor: colors.primary + "15" },
-              ]}
-            >
-              <Ionicons
-                name="create-outline"
-                size={28}
-                color={colors.primary}
-              />
-            </View>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Edit User
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-              Update user details and role
-            </Text>
-          </View>
-
-          {/* Form Card */}
-          <View
-            style={[
-              styles.formCard,
-              Shadow.sm,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.borderLight,
-              },
-            ]}
-          >
-            <Input
-              label="Full Name *"
-              placeholder="e.g. John Doe"
-              value={name}
-              onChangeText={setName}
-              leftIcon="person-outline"
-            />
-          </View>
-
-          {/* Role Selection */}
-          <View style={styles.sectionWrapper}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="shield-checkmark"
-                size={16}
-                color={colors.primary}
-              />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Role
+            {/* Header */}
+            <View style={styles.headerSection}>
+              <View
+                style={[
+                  styles.iconCircle,
+                  { backgroundColor: colors.primary + "15" },
+                ]}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={28}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={[styles.title, { color: colors.text }]}>
+                Edit User
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                Update user details and role
               </Text>
             </View>
-            <Button
-              title="Salesperson"
-              variant={role === "SALESPERSON" ? "primary" : "secondary"}
-              size="md"
-              onPress={() => setRole("SALESPERSON")}
-              icon={
-                <Ionicons
-                  name="person-outline"
-                  size={16}
-                  color={role === "SALESPERSON" ? "#FFF" : colors.textSecondary}
-                />
-              }
-              style={{ marginBottom: Spacing.sm }}
-            />
-            <View style={styles.roleRow}>
-              <Button
-                title="Manager"
-                variant={role === "MANAGER" ? "primary" : "secondary"}
-                size="md"
-                fullWidth={false}
-                onPress={() => setRole("MANAGER")}
-                icon={
-                  <Ionicons
-                    name="briefcase-outline"
-                    size={16}
-                    color={role === "MANAGER" ? "#FFF" : colors.textSecondary}
-                  />
-                }
-                style={{ flex: 1 }}
-              />
-              <Button
-                title="Admin"
-                variant={role === "ADMIN" ? "primary" : "secondary"}
-                size="md"
-                fullWidth={false}
-                onPress={() => setRole("ADMIN")}
-                icon={
-                  <Ionicons
-                    name="shield-outline"
-                    size={16}
-                    color={role === "ADMIN" ? "#FFF" : colors.textSecondary}
-                  />
-                }
-                style={{ flex: 1 }}
-              />
-            </View>
-          </View>
 
-          {/* Change indicator */}
-          {hasChanges && (
+            {/* Form Card */}
             <View
               style={[
-                styles.changeCard,
+                styles.formCard,
+                Shadow.sm,
                 {
-                  backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderLight,
                 },
               ]}
             >
-              <View style={styles.changeRow}>
-                <Text style={[styles.changeLabel, { color: colors.textMuted }]}>
-                  Changes detected
+              <Input
+                label="Full Name *"
+                placeholder="e.g. John Doe"
+                value={name}
+                onChangeText={setName}
+                leftIcon="person-outline"
+              />
+            </View>
+
+            {/* Role Selection */}
+            <View style={styles.sectionWrapper}>
+              <View style={styles.sectionHeader}>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Role
                 </Text>
-                <View style={styles.changeDetails}>
-                  {name !== (initialName || "") && (
-                    <Text
-                      style={[styles.changeText, { color: colors.primary }]}
-                    >
-                      Name: {name}
-                    </Text>
-                  )}
-                  {role !== (initialRole || "SALESPERSON") && (
-                    <Text
-                      style={[styles.changeText, { color: colors.primary }]}
-                    >
-                      Role: {role}
-                    </Text>
-                  )}
-                </View>
+              </View>
+              <Button
+                title="Salesperson"
+                variant={role === "SALESPERSON" ? "primary" : "secondary"}
+                size="md"
+                onPress={() => setRole("SALESPERSON")}
+                icon={
+                  <Ionicons
+                    name="person-outline"
+                    size={16}
+                    color={
+                      role === "SALESPERSON" ? "#FFF" : colors.textSecondary
+                    }
+                  />
+                }
+                style={{ marginBottom: Spacing.sm }}
+              />
+              <View style={styles.roleRow}>
+                <Button
+                  title="Manager"
+                  variant={role === "MANAGER" ? "primary" : "secondary"}
+                  size="md"
+                  fullWidth={false}
+                  onPress={() => setRole("MANAGER")}
+                  icon={
+                    <Ionicons
+                      name="briefcase-outline"
+                      size={16}
+                      color={role === "MANAGER" ? "#FFF" : colors.textSecondary}
+                    />
+                  }
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title="Admin"
+                  variant={role === "ADMIN" ? "primary" : "secondary"}
+                  size="md"
+                  fullWidth={false}
+                  onPress={() => setRole("ADMIN")}
+                  icon={
+                    <Ionicons
+                      name="shield-outline"
+                      size={16}
+                      color={role === "ADMIN" ? "#FFF" : colors.textSecondary}
+                    />
+                  }
+                  style={{ flex: 1 }}
+                />
               </View>
             </View>
-          )}
 
-          <Button
-            title="Save Changes"
-            onPress={handleSave}
-            loading={loading}
-            disabled={!name.trim() || !hasChanges}
-            size="lg"
-          />
+            {/* Change indicator */}
+            {hasChanges && (
+              <View
+                style={[
+                  styles.changeCard,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.changeRow}>
+                  <Text
+                    style={[styles.changeLabel, { color: colors.textMuted }]}
+                  >
+                    Changes detected
+                  </Text>
+                  <View style={styles.changeDetails}>
+                    {name !== (initialName || "") && (
+                      <Text
+                        style={[styles.changeText, { color: colors.primary }]}
+                      >
+                        Name: {name}
+                      </Text>
+                    )}
+                    {role !== (initialRole || "SALESPERSON") && (
+                      <Text
+                        style={[styles.changeText, { color: colors.primary }]}
+                      >
+                        Role: {role}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            )}
 
-          {!hasChanges && (
-            <Text style={[styles.noChanges, { color: colors.textMuted }]}>
-              No changes to save
-            </Text>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+            <Button
+              title="Save Changes"
+              onPress={handleSave}
+              loading={loading}
+              disabled={!name.trim() || !hasChanges}
+              size="lg"
+            />
+
+            {!hasChanges && (
+              <Text style={[styles.noChanges, { color: colors.textMuted }]}>
+                No changes to save
+              </Text>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
   );

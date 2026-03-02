@@ -264,7 +264,9 @@ export default function AssignStockScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
@@ -292,146 +294,151 @@ export default function AssignStockScreen() {
             </Text>
           </View>
 
-        {renderPicker(
-          "Product",
-          "cube",
-          selectedProduct,
-          selectedProduct?.name || "",
-          "Select a product",
-          showProducts,
-          () => {
-            closeAllDropdowns();
-            setShowProducts(!showProducts);
-          },
-          products,
-          (p) => {
-            setSelectedProduct(p);
-            setShowProducts(false);
-          },
-          (p) => ({ primary: p.name, secondary: `SKU: ${p.sku || "—"}` }),
-          "No products found",
-        )}
-
-        {renderPicker(
-          "Warehouse",
-          "business",
-          selectedWarehouse,
-          selectedWarehouse
-            ? `${selectedWarehouse.name}${selectedWarehouse.location ? ` • ${selectedWarehouse.location}` : ""}`
-            : "",
-          "Select a warehouse",
-          showWarehouses,
-          () => {
-            closeAllDropdowns();
-            setShowWarehouses(!showWarehouses);
-          },
-          warehouses,
-          (w) => {
-            setSelectedWarehouse(w);
-            setShowWarehouses(false);
-          },
-          (w) => ({ primary: w.name, secondary: w.location || undefined }),
-          "No warehouses found",
-        )}
-
-        {renderPicker(
-          "Salesperson",
-          "person",
-          selectedSalesperson,
-          selectedSalesperson
-            ? `${selectedSalesperson.name} • ${selectedSalesperson.email}`
-            : "",
-          "Select a salesperson",
-          showSalespersons,
-          () => {
-            closeAllDropdowns();
-            setShowSalespersons(!showSalespersons);
-          },
-          salespersons,
-          (s) => {
-            setSelectedSalesperson(s);
-            setShowSalespersons(false);
-          },
-          (s) => ({ primary: s.name, secondary: s.email }),
-          "No salespersons found",
-        )}
-
-        {/* Quantity */}
-        <View
-          style={[
-            styles.formCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
+          {renderPicker(
+            "Product",
+            "cube",
+            selectedProduct,
+            selectedProduct?.name || "",
+            "Select a product",
+            showProducts,
+            () => {
+              closeAllDropdowns();
+              setShowProducts(!showProducts);
             },
-          ]}
-        >
-          <Input
-            label="Quantity *"
-            placeholder="e.g. 50"
-            value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="number-pad"
-            leftIcon="layers-outline"
-          />
-        </View>
-
-        {/* Preview */}
-        {selectedProduct &&
-          selectedSalesperson &&
-          selectedWarehouse &&
-          quantity.trim() && (
-            <View
-              style={[
-                styles.previewCard,
-                {
-                  backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
-                Summary
-              </Text>
-              <Text style={[styles.previewLine, { color: colors.text }]}>
-                Assign{" "}
-                <Text
-                  style={{ fontWeight: FontWeight.bold, color: colors.primary }}
-                >
-                  {quantity}
-                </Text>{" "}
-                units of{" "}
-                <Text style={{ fontWeight: FontWeight.bold }}>
-                  {selectedProduct.name}
-                </Text>
-              </Text>
-              <Text style={[styles.previewLine, { color: colors.text }]}>
-                from{" "}
-                <Text style={{ fontWeight: FontWeight.bold }}>
-                  {selectedWarehouse.name}
-                </Text>{" "}
-                to{" "}
-                <Text style={{ fontWeight: FontWeight.bold }}>
-                  {selectedSalesperson.name}
-                </Text>
-              </Text>
-            </View>
+            products,
+            (p) => {
+              setSelectedProduct(p);
+              setShowProducts(false);
+            },
+            (p) => ({ primary: p.name, secondary: `SKU: ${p.sku || "—"}` }),
+            "No products found",
           )}
 
-        <Button
-          title="Assign Stock"
-          onPress={handleAssign}
-          loading={loading}
-          disabled={
-            !selectedProduct ||
-            !selectedSalesperson ||
-            !selectedWarehouse ||
-            !quantity.trim()
-          }
-          size="lg"
-        />
-      </ScrollView>
+          {renderPicker(
+            "Warehouse",
+            "business",
+            selectedWarehouse,
+            selectedWarehouse
+              ? `${selectedWarehouse.name}${selectedWarehouse.location ? ` • ${selectedWarehouse.location}` : ""}`
+              : "",
+            "Select a warehouse",
+            showWarehouses,
+            () => {
+              closeAllDropdowns();
+              setShowWarehouses(!showWarehouses);
+            },
+            warehouses,
+            (w) => {
+              setSelectedWarehouse(w);
+              setShowWarehouses(false);
+            },
+            (w) => ({ primary: w.name, secondary: w.location || undefined }),
+            "No warehouses found",
+          )}
+
+          {renderPicker(
+            "Salesperson",
+            "person",
+            selectedSalesperson,
+            selectedSalesperson
+              ? `${selectedSalesperson.name} • ${selectedSalesperson.email}`
+              : "",
+            "Select a salesperson",
+            showSalespersons,
+            () => {
+              closeAllDropdowns();
+              setShowSalespersons(!showSalespersons);
+            },
+            salespersons,
+            (s) => {
+              setSelectedSalesperson(s);
+              setShowSalespersons(false);
+            },
+            (s) => ({ primary: s.name, secondary: s.email }),
+            "No salespersons found",
+          )}
+
+          {/* Quantity */}
+          <View
+            style={[
+              styles.formCard,
+              Shadow.sm,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
+            ]}
+          >
+            <Input
+              label="Quantity *"
+              placeholder="e.g. 50"
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="number-pad"
+              leftIcon="layers-outline"
+            />
+          </View>
+
+          {/* Preview */}
+          {selectedProduct &&
+            selectedSalesperson &&
+            selectedWarehouse &&
+            quantity.trim() && (
+              <View
+                style={[
+                  styles.previewCard,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.previewTitle, { color: colors.textMuted }]}
+                >
+                  Summary
+                </Text>
+                <Text style={[styles.previewLine, { color: colors.text }]}>
+                  Assign{" "}
+                  <Text
+                    style={{
+                      fontWeight: FontWeight.bold,
+                      color: colors.primary,
+                    }}
+                  >
+                    {quantity}
+                  </Text>{" "}
+                  units of{" "}
+                  <Text style={{ fontWeight: FontWeight.bold }}>
+                    {selectedProduct.name}
+                  </Text>
+                </Text>
+                <Text style={[styles.previewLine, { color: colors.text }]}>
+                  from{" "}
+                  <Text style={{ fontWeight: FontWeight.bold }}>
+                    {selectedWarehouse.name}
+                  </Text>{" "}
+                  to{" "}
+                  <Text style={{ fontWeight: FontWeight.bold }}>
+                    {selectedSalesperson.name}
+                  </Text>
+                </Text>
+              </View>
+            )}
+
+          <Button
+            title="Assign Stock"
+            onPress={handleAssign}
+            loading={loading}
+            disabled={
+              !selectedProduct ||
+              !selectedSalesperson ||
+              !selectedWarehouse ||
+              !quantity.trim()
+            }
+            size="lg"
+          />
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

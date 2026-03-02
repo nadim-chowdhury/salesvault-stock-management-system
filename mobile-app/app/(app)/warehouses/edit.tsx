@@ -100,7 +100,9 @@ export default function WarehouseEditScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
@@ -114,7 +116,11 @@ export default function WarehouseEditScreen() {
                 { backgroundColor: colors.primary + "15" },
               ]}
             >
-              <Ionicons name="create-outline" size={28} color={colors.primary} />
+              <Ionicons
+                name="create-outline"
+                size={28}
+                color={colors.primary}
+              />
             </View>
             <Text style={[styles.title, { color: colors.text }]}>
               Edit Warehouse

@@ -119,119 +119,127 @@ export default function EditProductScreen() {
           </TouchableOpacity>
         }
       />
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: colors.primary + "15" },
-            ]}
-          >
-            <Ionicons name="create-outline" size={28} color={colors.primary} />
+          {/* Header */}
+          <View style={styles.headerSection}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons
+                name="create-outline"
+                size={28}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Edit Product
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              Update the product details below
+            </Text>
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Edit Product
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Update the product details below
-          </Text>
-        </View>
 
-        {/* Form Card */}
-        <View
-          style={[
-            styles.formCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <Input
-            label="Product Name *"
-            placeholder="e.g. Widget Pro"
-            value={name}
-            onChangeText={setName}
-            leftIcon="cube-outline"
-          />
-          <Input
-            label="Selling Price (৳) *"
-            placeholder="0.00"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="decimal-pad"
-            leftIcon="pricetag-outline"
-          />
-          <Input
-            label="Cost Price (৳)"
-            placeholder="0.00"
-            value={costPrice}
-            onChangeText={setCostPrice}
-            keyboardType="decimal-pad"
-            leftIcon="wallet-outline"
-          />
-          <Input
-            label="Description"
-            placeholder="Product details..."
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-
-        {/* Margin Preview */}
-        {margin !== null && !isNaN(margin) && (
+          {/* Form Card */}
           <View
             style={[
-              styles.previewCard,
+              styles.formCard,
+              Shadow.sm,
               {
-                backgroundColor: colors.surfaceSecondary,
-                borderColor: colors.border,
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
               },
             ]}
           >
-            <View style={styles.previewRow}>
-              <Text style={[styles.previewLabel, { color: colors.textMuted }]}>
-                Updated Margin
-              </Text>
-              <Text
-                style={[
-                  styles.previewValue,
-                  { color: margin >= 0 ? colors.success : colors.danger },
-                ]}
-              >
-                ৳{margin.toLocaleString()} (
-                {parseFloat(costPrice) > 0
-                  ? ((margin / parseFloat(costPrice)) * 100).toFixed(1)
-                  : "—"}
-                %)
-              </Text>
-            </View>
+            <Input
+              label="Product Name *"
+              placeholder="e.g. Widget Pro"
+              value={name}
+              onChangeText={setName}
+              leftIcon="cube-outline"
+            />
+            <Input
+              label="Selling Price (৳) *"
+              placeholder="0.00"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              leftIcon="pricetag-outline"
+            />
+            <Input
+              label="Cost Price (৳)"
+              placeholder="0.00"
+              value={costPrice}
+              onChangeText={setCostPrice}
+              keyboardType="decimal-pad"
+              leftIcon="wallet-outline"
+            />
+            <Input
+              label="Description"
+              placeholder="Product details..."
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
+            />
           </View>
-        )}
 
-        <Button
-          title="Save Changes"
-          onPress={handleSave}
-          loading={loading}
-          disabled={!name.trim() || !price.trim() || !hasChanges}
-          size="lg"
-        />
+          {/* Margin Preview */}
+          {margin !== null && !isNaN(margin) && (
+            <View
+              style={[
+                styles.previewCard,
+                {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <View style={styles.previewRow}>
+                <Text
+                  style={[styles.previewLabel, { color: colors.textMuted }]}
+                >
+                  Updated Margin
+                </Text>
+                <Text
+                  style={[
+                    styles.previewValue,
+                    { color: margin >= 0 ? colors.success : colors.danger },
+                  ]}
+                >
+                  ৳{margin.toLocaleString()} (
+                  {parseFloat(costPrice) > 0
+                    ? ((margin / parseFloat(costPrice)) * 100).toFixed(1)
+                    : "—"}
+                  %)
+                </Text>
+              </View>
+            </View>
+          )}
 
-        {!hasChanges && (
-          <Text style={[styles.noChanges, { color: colors.textMuted }]}>
-            No changes to save
-          </Text>
-        )}
-      </ScrollView>
+          <Button
+            title="Save Changes"
+            onPress={handleSave}
+            loading={loading}
+            disabled={!name.trim() || !price.trim() || !hasChanges}
+            size="lg"
+          />
+
+          {!hasChanges && (
+            <Text style={[styles.noChanges, { color: colors.textMuted }]}>
+              No changes to save
+            </Text>
+          )}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

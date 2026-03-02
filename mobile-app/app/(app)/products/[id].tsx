@@ -189,7 +189,9 @@ export default function ProductDetailScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
@@ -201,226 +203,238 @@ export default function ProductDetailScreen() {
             />
           }
         >
-        {/* Product Hero Card */}
-        <View
-          style={[
-            styles.heroCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
+          {/* Product Hero Card */}
           <View
             style={[
-              styles.iconCircle,
-              { backgroundColor: colors.primary + "15" },
+              styles.heroCard,
+              Shadow.sm,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
             ]}
           >
-            <Ionicons name="cube" size={32} color={colors.primary} />
-          </View>
-          <Text style={[styles.name, { color: colors.text }]}>
-            {product.name}
-          </Text>
-          <Text style={[styles.sku, { color: colors.textMuted }]}>
-            SKU: {product.sku}
-          </Text>
-          <Badge
-            text={product.is_active ? "Active" : "Inactive"}
-            variant={product.is_active ? "success" : "danger"}
-          />
-          {product.description && (
-            <Text style={[styles.description, { color: colors.textSecondary }]}>
-              {product.description}
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons name="cube" size={32} color={colors.primary} />
+            </View>
+            <Text style={[styles.name, { color: colors.text }]}>
+              {product.name}
             </Text>
-          )}
-        </View>
-
-        {/* Pricing Card */}
-        <View
-          style={[
-            styles.infoCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <Ionicons name="pricetag" size={16} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Pricing
+            <Text style={[styles.sku, { color: colors.textMuted }]}>
+              SKU: {product.sku}
             </Text>
-          </View>
-
-          <View style={styles.pricingGrid}>
-            <View style={styles.pricingItem}>
-              <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
-                Selling Price
-              </Text>
-              <Text style={[styles.pricingValue, { color: colors.primary }]}>
-                ৳{sellingPrice.toLocaleString()}
-              </Text>
-            </View>
-            <View style={styles.pricingItem}>
-              <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
-                Cost Price
-              </Text>
-              <Text
-                style={[styles.pricingValue, { color: colors.textSecondary }]}
-              >
-                ৳{costPrice.toLocaleString()}
-              </Text>
-            </View>
-            <View style={styles.pricingItem}>
-              <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
-                Margin
-              </Text>
-              <Text
-                style={[
-                  styles.pricingValue,
-                  { color: margin >= 0 ? colors.success : colors.danger },
-                ]}
-              >
-                ৳{margin.toLocaleString()}
-              </Text>
-            </View>
-            <View style={styles.pricingItem}>
-              <Text style={[styles.pricingLabel, { color: colors.textMuted }]}>
-                Margin %
-              </Text>
-              <Text
-                style={[
-                  styles.pricingValue,
-                  { color: margin >= 0 ? colors.success : colors.danger },
-                ]}
-              >
-                {marginPercent}%
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Details Card */}
-        <View
-          style={[
-            styles.infoCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <Ionicons
-              name="information-circle"
-              size={16}
-              color={colors.primary}
+            <Badge
+              text={product.is_active ? "Active" : "Inactive"}
+              variant={product.is_active ? "success" : "danger"}
             />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Details
-            </Text>
+            {product.description && (
+              <Text
+                style={[styles.description, { color: colors.textSecondary }]}
+              >
+                {product.description}
+              </Text>
+            )}
           </View>
 
-          <InfoRow
-            icon="calendar-outline"
-            label="Created"
-            value={new Date(product.created_at).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-            colors={colors}
-          />
-          <InfoRow
-            icon="time-outline"
-            label="Last Updated"
-            value={new Date(product.updated_at).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-            colors={colors}
-          />
-          {product.created_by_user && (
-            <InfoRow
-              icon="person-outline"
-              label="Created By"
-              value={product.created_by_user.name || "—"}
-              colors={colors}
-            />
-          )}
-        </View>
+          {/* Pricing Card */}
+          <View
+            style={[
+              styles.infoCard,
+              Shadow.sm,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
+            ]}
+          >
+            <View style={styles.sectionHeader}>
+              <Ionicons name="pricetag" size={16} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Pricing
+              </Text>
+            </View>
 
-        {/* Actions */}
-        {canEdit && (
-          <View style={styles.actionsSection}>
+            <View style={styles.pricingGrid}>
+              <View style={styles.pricingItem}>
+                <Text
+                  style={[styles.pricingLabel, { color: colors.textMuted }]}
+                >
+                  Selling Price
+                </Text>
+                <Text style={[styles.pricingValue, { color: colors.primary }]}>
+                  ৳{sellingPrice.toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.pricingItem}>
+                <Text
+                  style={[styles.pricingLabel, { color: colors.textMuted }]}
+                >
+                  Cost Price
+                </Text>
+                <Text
+                  style={[styles.pricingValue, { color: colors.textSecondary }]}
+                >
+                  ৳{costPrice.toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.pricingItem}>
+                <Text
+                  style={[styles.pricingLabel, { color: colors.textMuted }]}
+                >
+                  Margin
+                </Text>
+                <Text
+                  style={[
+                    styles.pricingValue,
+                    { color: margin >= 0 ? colors.success : colors.danger },
+                  ]}
+                >
+                  ৳{margin.toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.pricingItem}>
+                <Text
+                  style={[styles.pricingLabel, { color: colors.textMuted }]}
+                >
+                  Margin %
+                </Text>
+                <Text
+                  style={[
+                    styles.pricingValue,
+                    { color: margin >= 0 ? colors.success : colors.danger },
+                  ]}
+                >
+                  {marginPercent}%
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Details Card */}
+          <View
+            style={[
+              styles.infoCard,
+              Shadow.sm,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
+            ]}
+          >
             <View style={styles.sectionHeader}>
               <Ionicons
-                name="settings-outline"
+                name="information-circle"
                 size={16}
                 color={colors.primary}
               />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Actions
+                Details
               </Text>
             </View>
 
-            <Button
-              title="Edit Product"
-              onPress={() =>
-                router.push({
-                  pathname: "/(app)/products/edit",
-                  params: {
-                    id: product.id,
-                    name: product.name,
-                    price: String(product.price),
-                    cost_price: String(product.cost_price || ""),
-                    description: product.description || "",
-                  },
-                })
-              }
-              variant="primary"
-              icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
-              style={{ marginBottom: Spacing.sm }}
+            <InfoRow
+              icon="calendar-outline"
+              label="Created"
+              value={new Date(product.created_at).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+              colors={colors}
             />
-
-            <Button
-              title={
-                product.is_active ? "Deactivate Product" : "Activate Product"
-              }
-              onPress={handleToggleActive}
-              variant={product.is_active ? "secondary" : "primary"}
-              loading={actionLoading === "toggle"}
-              icon={
-                <Ionicons
-                  name={
-                    product.is_active
-                      ? "close-circle-outline"
-                      : "checkmark-circle-outline"
-                  }
-                  size={18}
-                  color={product.is_active ? colors.danger : "#FFF"}
-                />
-              }
-              style={{ marginBottom: Spacing.sm }}
+            <InfoRow
+              icon="time-outline"
+              label="Last Updated"
+              value={new Date(product.updated_at).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+              colors={colors}
             />
-
-            {isAdmin && (
-              <Button
-                title="Delete Product"
-                onPress={handleDelete}
-                variant="danger"
-                loading={actionLoading === "delete"}
-                icon={<Ionicons name="trash-outline" size={18} color="#FFF" />}
+            {product.created_by_user && (
+              <InfoRow
+                icon="person-outline"
+                label="Created By"
+                value={product.created_by_user.name || "—"}
+                colors={colors}
               />
             )}
           </View>
-        )}
-      </ScrollView>
+
+          {/* Actions */}
+          {canEdit && (
+            <View style={styles.actionsSection}>
+              <View style={styles.sectionHeader}>
+                <Ionicons
+                  name="settings-outline"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Actions
+                </Text>
+              </View>
+
+              <Button
+                title="Edit Product"
+                onPress={() =>
+                  router.push({
+                    pathname: "/(app)/products/edit",
+                    params: {
+                      id: product.id,
+                      name: product.name,
+                      price: String(product.price),
+                      cost_price: String(product.cost_price || ""),
+                      description: product.description || "",
+                    },
+                  })
+                }
+                variant="primary"
+                icon={<Ionicons name="create-outline" size={18} color="#FFF" />}
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              <Button
+                title={
+                  product.is_active ? "Deactivate Product" : "Activate Product"
+                }
+                onPress={handleToggleActive}
+                variant={product.is_active ? "secondary" : "primary"}
+                loading={actionLoading === "toggle"}
+                icon={
+                  <Ionicons
+                    name={
+                      product.is_active
+                        ? "close-circle-outline"
+                        : "checkmark-circle-outline"
+                    }
+                    size={18}
+                    color={product.is_active ? colors.danger : "#FFF"}
+                  />
+                }
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              {isAdmin && (
+                <Button
+                  title="Delete Product"
+                  onPress={handleDelete}
+                  variant="danger"
+                  loading={actionLoading === "delete"}
+                  icon={
+                    <Ionicons name="trash-outline" size={18} color="#FFF" />
+                  }
+                />
+              )}
+            </View>
+          )}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

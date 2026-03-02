@@ -84,10 +84,7 @@ export default function DashboardScreen() {
       >
         <PageHeader title="Dashboard" />
         <View
-          style={[
-            styles.center,
-            { backgroundColor: colors.surface, flex: 1 },
-          ]}
+          style={[styles.center, { backgroundColor: colors.surface, flex: 1 }]}
         >
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -117,7 +114,9 @@ export default function DashboardScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
@@ -130,56 +129,59 @@ export default function DashboardScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-        {/* Greeting */}
-        <View style={styles.greeting}>
-          <Text style={[styles.greetingText, { color: colors.textMuted }]}>
-            {getGreeting()},
-          </Text>
-          <Text style={[styles.userName, { color: colors.text }]}>
-            {user?.name || "User"}
-          </Text>
-          <Badge text={user?.role || "USER"} variant="info" />
-        </View>
-
-        {isAdmin ? (
-          <AdminDashboard data={data} colors={colors} router={router} />
-        ) : (
-          <SalespersonDashboard data={data} colors={colors} router={router} />
-        )}
-
-        {/* Recent Activity */}
-        {data?.recent_activity && data.recent_activity.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Recent Activity
+          {/* Greeting */}
+          <View style={styles.greeting}>
+            <Text style={[styles.greetingText, { color: colors.textMuted }]}>
+              {getGreeting()},
             </Text>
-            {data.recent_activity.slice(0, 10).map((log: any, i: number) => (
-              <Card key={log.id || i} style={styles.activityItem}>
-                <View style={styles.activityRow}>
-                  <View
-                    style={[
-                      styles.activityDot,
-                      { backgroundColor: colors.primary },
-                    ]}
-                  />
-                  <View style={styles.activityContent}>
-                    <Text
-                      style={[styles.activityAction, { color: colors.text }]}
-                    >
-                      {formatActionType(log.action_type)}
-                    </Text>
-                    <Text
-                      style={[styles.activityMeta, { color: colors.textMuted }]}
-                    >
-                      {log.entity_type} · {formatTimeAgo(log.created_at)}
-                    </Text>
-                  </View>
-                </View>
-              </Card>
-            ))}
+            <Text style={[styles.userName, { color: colors.text }]}>
+              {user?.name || "User"}
+            </Text>
+            <Badge text={user?.role || "USER"} variant="info" />
           </View>
-        )}
-      </ScrollView>
+
+          {isAdmin ? (
+            <AdminDashboard data={data} colors={colors} router={router} />
+          ) : (
+            <SalespersonDashboard data={data} colors={colors} router={router} />
+          )}
+
+          {/* Recent Activity */}
+          {data?.recent_activity && data.recent_activity.length > 0 && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Recent Activity
+              </Text>
+              {data.recent_activity.slice(0, 10).map((log: any, i: number) => (
+                <Card key={log.id || i} style={styles.activityItem}>
+                  <View style={styles.activityRow}>
+                    <View
+                      style={[
+                        styles.activityDot,
+                        { backgroundColor: colors.primary },
+                      ]}
+                    />
+                    <View style={styles.activityContent}>
+                      <Text
+                        style={[styles.activityAction, { color: colors.text }]}
+                      >
+                        {formatActionType(log.action_type)}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.activityMeta,
+                          { color: colors.textMuted },
+                        ]}
+                      >
+                        {log.entity_type} · {formatTimeAgo(log.created_at)}
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          )}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

@@ -67,100 +67,105 @@ export default function ProfileScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
         >
           {/* User Info */}
-        <View style={styles.profileHeader}>
-          <View
-            style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}
-          >
-            <Text style={[styles.avatarText, { color: colors.primary }]}>
-              {(user?.name || "U").charAt(0).toUpperCase()}
+          <View style={styles.profileHeader}>
+            <View
+              style={[
+                styles.avatar,
+                { backgroundColor: colors.primary + "20" },
+              ]}
+            >
+              <Text style={[styles.avatarText, { color: colors.primary }]}>
+                {(user?.name || "U").charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Text style={[styles.name, { color: colors.text }]}>
+              {user?.name}
             </Text>
+            <Text style={[styles.email, { color: colors.textMuted }]}>
+              {user?.email}
+            </Text>
+            <Badge text={user?.role || "USER"} variant="info" />
           </View>
-          <Text style={[styles.name, { color: colors.text }]}>
-            {user?.name}
-          </Text>
-          <Text style={[styles.email, { color: colors.textMuted }]}>
-            {user?.email}
-          </Text>
-          <Badge text={user?.role || "USER"} variant="info" />
-        </View>
 
-        {/* Menu Items */}
-        {isAdmin && (
-          <MenuItem
-            icon="people-outline"
-            label="User Management"
-            onPress={() => router.push("/(app)/profile/users")}
-            colors={colors}
-          />
-        )}
-        {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
-          <>
-            {/* <MenuItem
+          {/* Menu Items */}
+          {isAdmin && (
+            <MenuItem
+              icon="people-outline"
+              label="User Management"
+              onPress={() => router.push("/(app)/profile/users")}
+              colors={colors}
+            />
+          )}
+          {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
+            <>
+              {/* <MenuItem
               icon="business-outline"
               label="Warehouses"
               onPress={() => router.push("/(app)/warehouses/" as any)}
               colors={colors}
             /> */}
-            <MenuItem
-              icon="people-circle-outline"
-              label="Warehouse Users"
-              onPress={() => router.push("/(app)/profile/warehouse-users")}
-              colors={colors}
-            />
-            <MenuItem
-              icon="layers-outline"
-              label="Stock Management"
-              onPress={() => router.push("/(app)/profile/stock")}
-              colors={colors}
-            />
-            <MenuItem
-              icon="checkmark-done-outline"
-              label="Sale Approvals"
-              onPress={() => router.push("/(app)/sales/sales-approvals")}
-              colors={colors}
-            />
-          </>
-        )}
-        <MenuItem
-          icon="trophy-outline"
-          label="Sales Targets"
-          onPress={() => router.push("/(app)/sales/sales-targets")}
-          colors={colors}
-        />
-        <MenuItem
-          icon="bar-chart-outline"
-          label="Daily Sales Report"
-          onPress={() => router.push("/(app)/sales/daily-sales")}
-          colors={colors}
-        />
-        {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
+              <MenuItem
+                icon="people-circle-outline"
+                label="Warehouse Users"
+                onPress={() => router.push("/(app)/profile/warehouse-users")}
+                colors={colors}
+              />
+              <MenuItem
+                icon="layers-outline"
+                label="Stock Management"
+                onPress={() => router.push("/(app)/profile/stock")}
+                colors={colors}
+              />
+              <MenuItem
+                icon="checkmark-done-outline"
+                label="Sale Approvals"
+                onPress={() => router.push("/(app)/sales/sales-approvals")}
+                colors={colors}
+              />
+            </>
+          )}
           <MenuItem
-            icon="time-outline"
-            label="Activity Log"
-            onPress={() => router.push("/(app)/profile/activity")}
+            icon="trophy-outline"
+            label="Sales Targets"
+            onPress={() => router.push("/(app)/sales/sales-targets")}
             colors={colors}
           />
-        )}
-
-        <View style={styles.logoutSection}>
-          <Button
-            title="Sign Out"
-            onPress={handleLogout}
-            variant="danger"
-            icon={<Ionicons name="log-out-outline" size={18} color="#FFF" />}
+          <MenuItem
+            icon="bar-chart-outline"
+            label="Daily Sales Report"
+            onPress={() => router.push("/(app)/sales/daily-sales")}
+            colors={colors}
           />
-        </View>
+          {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
+            <MenuItem
+              icon="time-outline"
+              label="Activity Log"
+              onPress={() => router.push("/(app)/profile/activity")}
+              colors={colors}
+            />
+          )}
 
-        <Text style={[styles.version, { color: colors.textMuted }]}>
-          SalesVault v1.0.0
-        </Text>
-      </ScrollView>
+          <View style={styles.logoutSection}>
+            <Button
+              title="Sign Out"
+              onPress={handleLogout}
+              variant="danger"
+              icon={<Ionicons name="log-out-outline" size={18} color="#FFF" />}
+            />
+          </View>
+
+          <Text style={[styles.version, { color: colors.textMuted }]}>
+            SalesVault v1.0.0
+          </Text>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

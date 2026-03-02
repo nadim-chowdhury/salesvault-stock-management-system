@@ -146,7 +146,9 @@ export default function AddStockScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
@@ -174,252 +176,265 @@ export default function AddStockScreen() {
             </Text>
           </View>
 
-        {/* Product Picker */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="cube" size={16} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Product *
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[
-              styles.picker,
-              Shadow.sm,
-              {
-                backgroundColor: colors.surface,
-                borderColor: selectedProduct
-                  ? colors.primary
-                  : colors.borderLight,
-              },
-            ]}
-            onPress={() => {
-              setShowProducts(!showProducts);
-              setShowWarehouses(false);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text
+          {/* Product Picker */}
+          <View style={styles.sectionWrapper}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="cube" size={16} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Product *
+              </Text>
+            </View>
+            <TouchableOpacity
               style={[
-                styles.pickerText,
-                { color: selectedProduct ? colors.text : colors.textMuted },
-              ]}
-            >
-              {selectedProduct ? selectedProduct.name : "Select a product"}
-            </Text>
-            <Ionicons
-              name={showProducts ? "chevron-up" : "chevron-down"}
-              size={18}
-              color={colors.textMuted}
-            />
-          </TouchableOpacity>
-          {showProducts && (
-            <View
-              style={[
-                styles.dropdownList,
+                styles.picker,
+                Shadow.sm,
                 {
                   backgroundColor: colors.surface,
-                  borderColor: colors.borderLight,
+                  borderColor: selectedProduct
+                    ? colors.primary
+                    : colors.borderLight,
                 },
               ]}
+              onPress={() => {
+                setShowProducts(!showProducts);
+                setShowWarehouses(false);
+              }}
+              activeOpacity={0.7}
             >
-              {products.map((p) => (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[
-                    styles.dropdownItem,
-                    selectedProduct?.id === p.id && {
-                      backgroundColor: colors.primary + "10",
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedProduct(p);
-                    setShowProducts(false);
-                  }}
-                >
-                  <Text style={[styles.dropdownText, { color: colors.text }]}>
-                    {p.name}
+              <Text
+                style={[
+                  styles.pickerText,
+                  { color: selectedProduct ? colors.text : colors.textMuted },
+                ]}
+              >
+                {selectedProduct ? selectedProduct.name : "Select a product"}
+              </Text>
+              <Ionicons
+                name={showProducts ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+            {showProducts && (
+              <View
+                style={[
+                  styles.dropdownList,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.borderLight,
+                  },
+                ]}
+              >
+                {products.map((p) => (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[
+                      styles.dropdownItem,
+                      selectedProduct?.id === p.id && {
+                        backgroundColor: colors.primary + "10",
+                      },
+                    ]}
+                    onPress={() => {
+                      setSelectedProduct(p);
+                      setShowProducts(false);
+                    }}
+                  >
+                    <Text style={[styles.dropdownText, { color: colors.text }]}>
+                      {p.name}
+                    </Text>
+                    <View style={styles.dropdownMetaRow}>
+                      <Text
+                        style={[
+                          styles.dropdownMeta,
+                          { color: colors.textMuted },
+                        ]}
+                      >
+                        SKU: {p.sku || "—"}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.dropdownStock,
+                          {
+                            color:
+                              p.total_stock > 0
+                                ? colors.success
+                                : colors.danger,
+                          },
+                        ]}
+                      >
+                        Stock: {p.total_stock || 0}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                {products.length === 0 && (
+                  <Text
+                    style={[styles.dropdownEmpty, { color: colors.textMuted }]}
+                  >
+                    No products found
                   </Text>
-                  <View style={styles.dropdownMetaRow}>
-                    <Text
-                      style={[styles.dropdownMeta, { color: colors.textMuted }]}
-                    >
-                      SKU: {p.sku || "—"}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.dropdownStock,
-                        { color: p.total_stock > 0 ? colors.success : colors.danger },
-                      ]}
-                    >
-                      Stock: {p.total_stock || 0}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-              {products.length === 0 && (
-                <Text
-                  style={[styles.dropdownEmpty, { color: colors.textMuted }]}
-                >
-                  No products found
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* Warehouse Picker */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="business" size={16} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Warehouse *
-            </Text>
+                )}
+              </View>
+            )}
           </View>
-          <TouchableOpacity
-            style={[
-              styles.picker,
-              Shadow.sm,
-              {
-                backgroundColor: colors.surface,
-                borderColor: selectedWarehouse
-                  ? colors.primary
-                  : colors.borderLight,
-              },
-            ]}
-            onPress={() => {
-              setShowWarehouses(!showWarehouses);
-              setShowProducts(false);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text
+
+          {/* Warehouse Picker */}
+          <View style={styles.sectionWrapper}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="business" size={16} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Warehouse *
+              </Text>
+            </View>
+            <TouchableOpacity
               style={[
-                styles.pickerText,
-                { color: selectedWarehouse ? colors.text : colors.textMuted },
-              ]}
-            >
-              {selectedWarehouse
-                ? `${selectedWarehouse.name}${selectedWarehouse.location ? ` • ${selectedWarehouse.location}` : ""}`
-                : "Select a warehouse"}
-            </Text>
-            <Ionicons
-              name={showWarehouses ? "chevron-up" : "chevron-down"}
-              size={18}
-              color={colors.textMuted}
-            />
-          </TouchableOpacity>
-          {showWarehouses && (
-            <View
-              style={[
-                styles.dropdownList,
+                styles.picker,
+                Shadow.sm,
                 {
                   backgroundColor: colors.surface,
-                  borderColor: colors.borderLight,
+                  borderColor: selectedWarehouse
+                    ? colors.primary
+                    : colors.borderLight,
                 },
               ]}
+              onPress={() => {
+                setShowWarehouses(!showWarehouses);
+                setShowProducts(false);
+              }}
+              activeOpacity={0.7}
             >
-              {warehouses.map((w) => (
-                <TouchableOpacity
-                  key={w.id}
-                  style={[
-                    styles.dropdownItem,
-                    selectedWarehouse?.id === w.id && {
-                      backgroundColor: colors.primary + "10",
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedWarehouse(w);
-                    setShowWarehouses(false);
-                  }}
-                >
-                  <Text style={[styles.dropdownText, { color: colors.text }]}>
-                    {w.name}
-                  </Text>
-                  {w.location && (
-                    <Text
-                      style={[styles.dropdownMeta, { color: colors.textMuted }]}
-                    >
-                      {w.location}
+              <Text
+                style={[
+                  styles.pickerText,
+                  { color: selectedWarehouse ? colors.text : colors.textMuted },
+                ]}
+              >
+                {selectedWarehouse
+                  ? `${selectedWarehouse.name}${selectedWarehouse.location ? ` • ${selectedWarehouse.location}` : ""}`
+                  : "Select a warehouse"}
+              </Text>
+              <Ionicons
+                name={showWarehouses ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+            {showWarehouses && (
+              <View
+                style={[
+                  styles.dropdownList,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.borderLight,
+                  },
+                ]}
+              >
+                {warehouses.map((w) => (
+                  <TouchableOpacity
+                    key={w.id}
+                    style={[
+                      styles.dropdownItem,
+                      selectedWarehouse?.id === w.id && {
+                        backgroundColor: colors.primary + "10",
+                      },
+                    ]}
+                    onPress={() => {
+                      setSelectedWarehouse(w);
+                      setShowWarehouses(false);
+                    }}
+                  >
+                    <Text style={[styles.dropdownText, { color: colors.text }]}>
+                      {w.name}
                     </Text>
-                  )}
-                </TouchableOpacity>
-              ))}
-              {warehouses.length === 0 && (
-                <Text
-                  style={[styles.dropdownEmpty, { color: colors.textMuted }]}
-                >
-                  No warehouses found
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
+                    {w.location && (
+                      <Text
+                        style={[
+                          styles.dropdownMeta,
+                          { color: colors.textMuted },
+                        ]}
+                      >
+                        {w.location}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+                {warehouses.length === 0 && (
+                  <Text
+                    style={[styles.dropdownEmpty, { color: colors.textMuted }]}
+                  >
+                    No warehouses found
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
 
-        {/* Quantity */}
-        <View
-          style={[
-            styles.formCard,
-            Shadow.sm,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <Input
-            label="Quantity *"
-            placeholder="e.g. 100"
-            value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="number-pad"
-            leftIcon="layers-outline"
-          />
-        </View>
-
-        {/* Preview */}
-        {selectedProduct && selectedWarehouse && quantity.trim() && (
+          {/* Quantity */}
           <View
             style={[
-              styles.previewCard,
+              styles.formCard,
+              Shadow.sm,
               {
-                backgroundColor: colors.surfaceSecondary,
-                borderColor: colors.border,
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
               },
             ]}
           >
-            <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
-              Summary
-            </Text>
-            <Text style={[styles.previewLine, { color: colors.text }]}>
-              Add{" "}
-              <Text
-                style={{ fontWeight: FontWeight.bold, color: colors.primary }}
-              >
-                {quantity}
-              </Text>{" "}
-              units of{" "}
-              <Text style={{ fontWeight: FontWeight.bold }}>
-                {selectedProduct.name}
-              </Text>
-            </Text>
-            <Text style={[styles.previewLine, { color: colors.text }]}>
-              to{" "}
-              <Text style={{ fontWeight: FontWeight.bold }}>
-                {selectedWarehouse.name}
-              </Text>
-            </Text>
+            <Input
+              label="Quantity *"
+              placeholder="e.g. 100"
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="number-pad"
+              leftIcon="layers-outline"
+            />
           </View>
-        )}
 
-        <Button
-          title="Add Stock"
-          onPress={handleAdd}
-          loading={loading}
-          disabled={!selectedProduct || !selectedWarehouse || !quantity.trim()}
-          size="lg"
-        />
-      </ScrollView>
+          {/* Preview */}
+          {selectedProduct && selectedWarehouse && quantity.trim() && (
+            <View
+              style={[
+                styles.previewCard,
+                {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.previewTitle, { color: colors.textMuted }]}>
+                Summary
+              </Text>
+              <Text style={[styles.previewLine, { color: colors.text }]}>
+                Add{" "}
+                <Text
+                  style={{ fontWeight: FontWeight.bold, color: colors.primary }}
+                >
+                  {quantity}
+                </Text>{" "}
+                units of{" "}
+                <Text style={{ fontWeight: FontWeight.bold }}>
+                  {selectedProduct.name}
+                </Text>
+              </Text>
+              <Text style={[styles.previewLine, { color: colors.text }]}>
+                to{" "}
+                <Text style={{ fontWeight: FontWeight.bold }}>
+                  {selectedWarehouse.name}
+                </Text>
+              </Text>
+            </View>
+          )}
+
+          <Button
+            title="Add Stock"
+            onPress={handleAdd}
+            loading={loading}
+            disabled={
+              !selectedProduct || !selectedWarehouse || !quantity.trim()
+            }
+            size="lg"
+          />
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

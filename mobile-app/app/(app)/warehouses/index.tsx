@@ -234,7 +234,9 @@ export default function WarehousesScreen() {
         }
       />
 
-      <View style={[styles.mainContent, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.mainContent, { backgroundColor: colors.background }]}
+      >
         {/* Search */}
         <View
           style={[
@@ -245,183 +247,189 @@ export default function WarehousesScreen() {
             },
           ]}
         >
-        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
-        <TextInput
-          placeholder="Search warehouses..."
-          placeholderTextColor={colors.textMuted}
-          value={search}
-          onChangeText={setSearch}
-          style={[styles.searchInput, { color: colors.text }]}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Filter + Sort Row */}
-      <View style={styles.filterRow}>
-        {filterChips.map((chip) => {
-          const isActive = filterStatus === chip.value;
-          return (
-            <TouchableOpacity
-              key={chip.value}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: isActive
-                    ? colors.primary
-                    : colors.surfaceSecondary,
-                  borderColor: isActive ? colors.primary : colors.border,
-                },
-              ]}
-              onPress={() => setFilterStatus(chip.value)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: isActive ? "#FFFFFF" : colors.textSecondary },
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-        <View style={styles.chipSpacer} />
-        <TouchableOpacity
-          style={[
-            styles.sortBtn,
-            {
-              backgroundColor: showSort
-                ? colors.primary
-                : colors.surfaceSecondary,
-              borderColor: showSort ? colors.primary : colors.border,
-            },
-          ]}
-          onPress={() => setShowSort(!showSort)}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="swap-vertical-outline"
-            size={14}
-            color={showSort ? "#FFF" : colors.textSecondary}
+          <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+          <TextInput
+            placeholder="Search warehouses..."
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchInput, { color: colors.text }]}
           />
-          <Text
-            style={[
-              styles.chipText,
-              { color: showSort ? "#FFF" : colors.textSecondary },
-            ]}
-          >
-            Sort
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Sort Options */}
-      {showSort && (
-        <View style={styles.sortRow}>
-          {sortOptions.map((opt) => {
-            const isActive = sortBy === opt.value;
+        {/* Filter + Sort Row */}
+        <View style={styles.filterRow}>
+          {filterChips.map((chip) => {
+            const isActive = filterStatus === chip.value;
             return (
               <TouchableOpacity
-                key={opt.value}
+                key={chip.value}
                 style={[
-                  styles.sortChip,
+                  styles.chip,
                   {
                     backgroundColor: isActive
-                      ? colors.primary + "15"
+                      ? colors.primary
                       : colors.surfaceSecondary,
                     borderColor: isActive ? colors.primary : colors.border,
                   },
                 ]}
-                onPress={() => {
-                  setSortBy(opt.value);
-                  setShowSort(false);
-                }}
+                onPress={() => setFilterStatus(chip.value)}
                 activeOpacity={0.7}
               >
-                <Ionicons
-                  name={opt.icon}
-                  size={12}
-                  color={isActive ? colors.primary : colors.textMuted}
-                />
                 <Text
                   style={[
-                    styles.sortChipText,
-                    { color: isActive ? colors.primary : colors.textSecondary },
+                    styles.chipText,
+                    { color: isActive ? "#FFFFFF" : colors.textSecondary },
                   ]}
                 >
-                  {opt.label}
+                  {chip.label}
                 </Text>
               </TouchableOpacity>
             );
           })}
-        </View>
-      )}
-
-      {loading && warehouses.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={sortedWarehouses}
-          renderItem={renderWarehouse}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
+          <View style={styles.chipSpacer} />
+          <TouchableOpacity
+            style={[
+              styles.sortBtn,
+              {
+                backgroundColor: showSort
+                  ? colors.primary
+                  : colors.surfaceSecondary,
+                borderColor: showSort ? colors.primary : colors.border,
+              },
+            ]}
+            onPress={() => setShowSort(!showSort)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="swap-vertical-outline"
+              size={14}
+              color={showSort ? "#FFF" : colors.textSecondary}
             />
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.3}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-                style={{ paddingVertical: Spacing.lg }}
-              />
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons
-                name="business-outline"
-                size={48}
-                color={colors.textMuted}
-              />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {hasFilters ? "No matching warehouses" : "No warehouses yet"}
-              </Text>
-              {canCreate && !hasFilters && (
-                <Text
-                  style={[styles.emptySubtext, { color: colors.textMuted }]}
-                >
-                  Tap + to create your first warehouse
-                </Text>
-              )}
-            </View>
-          }
-        />
-      )}
+            <Text
+              style={[
+                styles.chipText,
+                { color: showSort ? "#FFF" : colors.textSecondary },
+              ]}
+            >
+              Sort
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      {canCreate && (
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.primary }]}
-          onPress={() => router.push("/(app)/warehouses/create")}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={28} color="#FFF" />
-        </TouchableOpacity>
-      )}
+        {/* Sort Options */}
+        {showSort && (
+          <View style={styles.sortRow}>
+            {sortOptions.map((opt) => {
+              const isActive = sortBy === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.sortChip,
+                    {
+                      backgroundColor: isActive
+                        ? colors.primary + "15"
+                        : colors.surfaceSecondary,
+                      borderColor: isActive ? colors.primary : colors.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    setSortBy(opt.value);
+                    setShowSort(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={opt.icon}
+                    size={12}
+                    color={isActive ? colors.primary : colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.sortChipText,
+                      {
+                        color: isActive ? colors.primary : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {loading && warehouses.length === 0 ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={sortedWarehouses}
+            renderItem={renderWarehouse}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+              />
+            }
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.3}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  style={{ paddingVertical: Spacing.lg }}
+                />
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons
+                  name="business-outline"
+                  size={48}
+                  color={colors.textMuted}
+                />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  {hasFilters ? "No matching warehouses" : "No warehouses yet"}
+                </Text>
+                {canCreate && !hasFilters && (
+                  <Text
+                    style={[styles.emptySubtext, { color: colors.textMuted }]}
+                  >
+                    Tap + to create your first warehouse
+                  </Text>
+                )}
+              </View>
+            }
+          />
+        )}
+
+        {canCreate && (
+          <TouchableOpacity
+            style={[styles.fab, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/(app)/warehouses/create")}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={28} color="#FFF" />
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
