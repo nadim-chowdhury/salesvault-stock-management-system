@@ -353,7 +353,7 @@ export default function DailySalesReportScreen() {
                 ]}
               >
                 <TouchableOpacity
-                  style={styles.userItem}
+                  style={[styles.userItem, { borderBottomColor: colors.borderLight }]}
                   onPress={() => {
                     setSalespersonId(null);
                     setShowUserPicker(false);
@@ -362,6 +362,7 @@ export default function DailySalesReportScreen() {
                   <Text
                     style={[
                       styles.userItemText,
+                      { color: colors.text },
                       !salespersonId && {
                         color: colors.primary,
                         fontWeight: FontWeight.bold,
@@ -374,7 +375,7 @@ export default function DailySalesReportScreen() {
                 {salespersons.map((s) => (
                   <TouchableOpacity
                     key={s.id}
-                    style={styles.userItem}
+                    style={[styles.userItem, { borderBottomColor: colors.borderLight }]}
                     onPress={() => {
                       setSalespersonId(s.id);
                       setShowUserPicker(false);
@@ -383,6 +384,7 @@ export default function DailySalesReportScreen() {
                     <Text
                       style={[
                         styles.userItemText,
+                        { color: colors.text },
                         salespersonId === s.id && {
                           color: colors.primary,
                           fontWeight: FontWeight.bold,
