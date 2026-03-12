@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+
+# environment variables - NEVER commit these
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# build output
+dist/
+build/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+npm-debug.log*
+
+# mobile
+*.apk
+*.aab
+*.ipa
+*.keystore
+.expo/
+
+# Firebase config (contains API keys)
+google-services.json
+GoogleService-Info.plist
