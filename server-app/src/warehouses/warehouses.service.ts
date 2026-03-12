@@ -119,18 +119,16 @@ export class WarehousesService {
     const warehouse = await this.warehouseRepo.findOne({ where: { id } });
     if (!warehouse) throw new NotFoundException('Warehouse not found');
 
-    warehouse.is_active = false;
-    await this.warehouseRepo.save(warehouse);
-
     await this.activityLogService.log({
       user_id: userId,
       action_type: ActionType.WAREHOUSE_DELETE,
       entity_type: 'Warehouse',
       entity_id: id,
-      old_data: { name: warehouse.name, is_active: true },
-      new_data: { is_active: false },
+      old_data: { name: warehouse.name, location: warehouse.location },
     });
 
-    return { message: 'Warehouse deactivated successfully' };
+    await this.warehouseRepo.remove(warehouse);
+
+    return { message: 'Warehouse deleted successfully' };
   }
 }

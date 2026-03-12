@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { Warehouse } from './warehouse.entity';
+import { Store } from './store.entity';
 import { SaleItem } from './sale-item.entity';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { SaleStatus } from '../common/enums/sale-status.enum';
@@ -26,6 +27,10 @@ export class Sale {
   @Column({ type: 'uuid', nullable: true })
   @Index()
   warehouse_id: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  @Index()
+  store_id: string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   total_amount: number;
@@ -71,9 +76,13 @@ export class Sale {
   @JoinColumn({ name: 'salesperson_id' })
   salesperson: User;
 
-  @ManyToOne(() => Warehouse, { onDelete: 'RESTRICT', nullable: true })
+  @ManyToOne(() => Warehouse, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'warehouse_id' })
   warehouse: Warehouse;
+
+  @ManyToOne(() => Store, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'store_id' })
+  store: Store;
 
   @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'approved_by' })

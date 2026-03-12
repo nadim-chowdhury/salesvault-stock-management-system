@@ -22,6 +22,9 @@ export const Endpoints = {
   // Warehouses
   WAREHOUSES: "/warehouses",
 
+  // Stores
+  STORES: "/stores",
+
   // Warehouse Users
   WAREHOUSE_USERS: "/warehouse-users",
   WAREHOUSE_USERS_ASSIGN: "/warehouse-users/assign",

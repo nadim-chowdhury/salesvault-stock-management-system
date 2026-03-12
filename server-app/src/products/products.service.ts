@@ -141,28 +141,7 @@ export class ProductsService {
     return saved;
   }
 
-  async softDelete(id: string, userId: string) {
-    const product = await this.productRepo.findOne({ where: { id } });
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    product.is_active = false;
-    await this.productRepo.save(product);
-
-    await this.activityLogService.log({
-      user_id: userId,
-      action_type: ActionType.PRODUCT_DELETE,
-      entity_type: 'Product',
-      entity_id: id,
-      old_data: { name: product.name, sku: product.sku, is_active: true },
-      new_data: { is_active: false },
-    });
-
-    return { message: 'Product deactivated successfully' };
-  }
-
-  async hardDelete(id: string, userId: string) {
+  async remove(id: string, userId: string) {
     const product = await this.productRepo.findOne({ where: { id } });
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -176,13 +155,12 @@ export class ProductsService {
       old_data: {
         name: product.name,
         sku: product.sku,
-        is_active: product.is_active,
+        price: product.price,
       },
-      new_data: null,
     });
 
     await this.productRepo.remove(product);
 
-    return { message: 'Product permanently deleted' };
+    return { message: 'Product deleted successfully' };
   }
 }

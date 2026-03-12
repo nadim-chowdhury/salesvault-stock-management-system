@@ -125,6 +125,12 @@ export default function ProfileScreen() {
                 colors={colors}
               />
               <MenuItem
+                icon="storefront-outline"
+                label="Stores"
+                onPress={() => router.push("/(app)/stores/" as any)}
+                colors={colors}
+              />
+              <MenuItem
                 icon="checkmark-done-outline"
                 label="Sale Approvals"
                 onPress={() => router.push("/(app)/sales/sales-approvals")}

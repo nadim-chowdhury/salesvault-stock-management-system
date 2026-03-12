@@ -274,6 +274,12 @@ function AdminDashboard({
           onPress={() => router.push("/(app)/sales/sales-approvals")}
           colors={colors}
         />
+        <DashMenuItem
+          icon="storefront-outline"
+          label="Stores"
+          onPress={() => router.push("/(app)/stores/" as any)}
+          colors={colors}
+        />
 
         <DashMenuItem
           icon="trophy-outline"

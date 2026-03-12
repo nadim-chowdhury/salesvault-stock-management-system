@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
@@ -57,6 +58,35 @@ export default function CreateSaleScreen() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [availableStores, setAvailableStores] = useState<any[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+
+  // Big data handling state
+  const [productSearch, setProductSearch] = useState("");
+  const [visibleProductCount, setVisibleProductCount] = useState(20);
+  const [storeSearch, setStoreSearch] = useState("");
+  const [storePickerExpanded, setStorePickerExpanded] = useState(true);
+
+  // Helper: select/deselect store and auto-fill customer fields
+  const selectStore = (storeId: string | null) => {
+    // If deselecting, clear customer fields if they still match the store
+    if (!storeId && selectedStoreId) {
+      const prev = availableStores.find((s: any) => s.id === selectedStoreId);
+      if (prev) {
+        if (customerName === prev.name) setCustomerName("");
+        if (customerPhone === (prev.phone || "")) setCustomerPhone("");
+      }
+    }
+    setSelectedStoreId(storeId);
+    // If selecting, auto-fill customer fields
+    if (storeId) {
+      const store = availableStores.find((s: any) => s.id === storeId);
+      if (store) {
+        setCustomerName(store.name || "");
+        setCustomerPhone(store.phone || "");
+      }
+    }
+  };
 
   // Manual Quantity Modal State
   const [qtyModalVisible, setQtyModalVisible] = useState(false);
@@ -102,6 +132,21 @@ export default function CreateSaleScreen() {
       setLoading(false);
     }
   }, [fetchProducts]);
+
+  // Fetch active stores
+  useEffect(() => {
+    api
+      .get(Endpoints.STORES, { params: { is_active: "true", limit: 100 } })
+      .then((res) => {
+        const result = res.data?.data || res.data;
+        const stores =
+          result?.data ||
+          result?.items ||
+          (Array.isArray(result) ? result : []);
+        setAvailableStores(stores);
+      })
+      .catch((err) => console.error("Stores fetch error:", err));
+  }, []);
 
   useEffect(() => {
     // Wait for user to be loaded from the auth store
@@ -217,6 +262,7 @@ export default function CreateSaleScreen() {
         customer_name: customerName.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
         notes: notes.trim() || undefined,
+        store_id: selectedStoreId || undefined,
         idempotency_key: `sale-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       });
       Alert.alert("Success", "Sale created successfully!", [
@@ -290,9 +336,47 @@ export default function CreateSaleScreen() {
             <View style={styles.sectionHeader}>
               <Ionicons name="cube" size={16} color={colors.primary} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Available Stock
+                Available Stock ({myStock.length})
               </Text>
             </View>
+
+            {/* Product Search */}
+            {!loading && myStock.length > 5 && (
+              <View
+                style={[
+                  styles.inlineSearch,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="search-outline"
+                  size={16}
+                  color={colors.textMuted}
+                />
+                <TextInput
+                  placeholder="Search products..."
+                  placeholderTextColor={colors.textMuted}
+                  value={productSearch}
+                  onChangeText={(t) => {
+                    setProductSearch(t);
+                    setVisibleProductCount(20);
+                  }}
+                  style={[styles.inlineSearchInput, { color: colors.text }]}
+                />
+                {productSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setProductSearch("")}>
+                    <Ionicons
+                      name="close-circle"
+                      size={16}
+                      color={colors.textMuted}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
 
             {loading ? (
               <ActivityIndicator
@@ -314,61 +398,128 @@ export default function CreateSaleScreen() {
                 </Text>
               </View>
             ) : (
-              myStock.map((stock, i) => {
-                const pid = stock.product_id || stock.product?.id;
-                const isAdded = items.some((it) => it.product_id === pid);
+              (() => {
+                const filtered = productSearch.trim()
+                  ? myStock.filter((s) =>
+                      (s.product?.name || "")
+                        .toLowerCase()
+                        .includes(productSearch.toLowerCase()),
+                    )
+                  : myStock;
+                const visible = filtered.slice(0, visibleProductCount);
+                const hasMoreProducts = filtered.length > visibleProductCount;
                 return (
-                  <TouchableOpacity
-                    key={i}
-                    style={[
-                      styles.stockCard,
-                      !isAdded && Shadow.sm,
-                      {
-                        backgroundColor: isAdded
-                          ? colors.primary + "10"
-                          : colors.surface,
-                        borderColor: isAdded
-                          ? colors.primary
-                          : colors.borderLight,
-                      },
-                    ]}
-                    onPress={() => addItem(stock)}
-                    activeOpacity={0.7}
-                    disabled={isAdded}
-                  >
-                    <View style={styles.stockRow}>
-                      <Ionicons
-                        name={
-                          isAdded ? "checkmark-circle" : "add-circle-outline"
-                        }
-                        size={22}
-                        color={isAdded ? colors.primary : colors.textMuted}
-                      />
-                      <View style={styles.stockInfo}>
-                        <Text
-                          style={[styles.stockName, { color: colors.text }]}
+                  <>
+                    {visible.length === 0 && (
+                      <Text
+                        style={[
+                          styles.emptyText,
+                          {
+                            color: colors.textMuted,
+                            textAlign: "center",
+                            paddingVertical: Spacing.lg,
+                          },
+                        ]}
+                      >
+                        No products match "{productSearch}"
+                      </Text>
+                    )}
+                    {visible.map((stock: any, i: number) => {
+                      const pid = stock.product_id || stock.product?.id;
+                      const isAdded = items.some((it) => it.product_id === pid);
+                      return (
+                        <TouchableOpacity
+                          key={pid || i}
+                          style={[
+                            styles.stockCard,
+                            !isAdded && Shadow.sm,
+                            {
+                              backgroundColor: isAdded
+                                ? colors.primary + "10"
+                                : colors.surface,
+                              borderColor: isAdded
+                                ? colors.primary
+                                : colors.borderLight,
+                            },
+                          ]}
+                          onPress={() => addItem(stock)}
+                          activeOpacity={0.7}
+                          disabled={isAdded}
                         >
-                          {stock.product?.name || "Product"}
-                        </Text>
+                          <View style={styles.stockRow}>
+                            <Ionicons
+                              name={
+                                isAdded
+                                  ? "checkmark-circle"
+                                  : "add-circle-outline"
+                              }
+                              size={22}
+                              color={
+                                isAdded ? colors.primary : colors.textMuted
+                              }
+                            />
+                            <View style={styles.stockInfo}>
+                              <Text
+                                style={[
+                                  styles.stockName,
+                                  { color: colors.text },
+                                ]}
+                              >
+                                {stock.product?.name || "Product"}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.stockQty,
+                                  { color: colors.textSecondary },
+                                ]}
+                              >
+                                Available:{" "}
+                                {stock.quantity_remaining ?? stock.quantity}
+                              </Text>
+                            </View>
+                            <Text
+                              style={[
+                                styles.stockPrice,
+                                { color: colors.primary },
+                              ]}
+                            >
+                              ৳
+                              {Number(
+                                stock.product?.price || 0,
+                              ).toLocaleString()}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    {hasMoreProducts && (
+                      <TouchableOpacity
+                        style={[
+                          styles.showMoreBtn,
+                          { borderColor: colors.primary },
+                        ]}
+                        onPress={() => setVisibleProductCount((p) => p + 20)}
+                        activeOpacity={0.7}
+                      >
                         <Text
                           style={[
-                            styles.stockQty,
-                            { color: colors.textSecondary },
+                            styles.showMoreText,
+                            { color: colors.primary },
                           ]}
                         >
-                          Available:{" "}
-                          {stock.quantity_remaining ?? stock.quantity}
+                          Show more ({filtered.length - visibleProductCount}{" "}
+                          remaining)
                         </Text>
-                      </View>
-                      <Text
-                        style={[styles.stockPrice, { color: colors.primary }]}
-                      >
-                        ৳{Number(stock.product?.price || 0).toLocaleString()}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                        <Ionicons
+                          name="chevron-down"
+                          size={16}
+                          color={colors.primary}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </>
                 );
-              })
+              })()
             )}
           </View>
 
@@ -451,6 +602,202 @@ export default function CreateSaleScreen() {
                   </View>
                 </View>
               ))}
+            </View>
+          )}
+
+          {/* Store Picker */}
+          {availableStores.length > 0 && (
+            <View style={styles.sectionWrapper}>
+              <TouchableOpacity
+                style={styles.sectionHeader}
+                onPress={() => setStorePickerExpanded(!storePickerExpanded)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="storefront" size={16} color={colors.primary} />
+                <Text
+                  style={[styles.sectionTitle, { color: colors.text, flex: 1 }]}
+                >
+                  Store (optional)
+                </Text>
+                <Ionicons
+                  name={storePickerExpanded ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
+
+              {/* Selected store indicator */}
+              {selectedStoreId && !storePickerExpanded && (
+                <View
+                  style={[
+                    styles.selectedStoreCard,
+                    {
+                      backgroundColor: colors.primary + "10",
+                      borderColor: colors.primary,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={colors.primary}
+                  />
+                  <Text
+                    style={[
+                      styles.selectedStoreName,
+                      { color: colors.primary },
+                    ]}
+                  >
+                    {availableStores.find((s: any) => s.id === selectedStoreId)
+                      ?.name || "Selected"}
+                  </Text>
+                  <TouchableOpacity onPress={() => selectStore(null)}>
+                    <Ionicons
+                      name="close-circle"
+                      size={18}
+                      color={colors.textMuted}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {storePickerExpanded && (
+                <>
+                  {/* Store search */}
+                  {availableStores.length > 5 && (
+                    <View
+                      style={[
+                        styles.inlineSearch,
+                        {
+                          backgroundColor: colors.surfaceSecondary,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="search-outline"
+                        size={16}
+                        color={colors.textMuted}
+                      />
+                      <TextInput
+                        placeholder="Search stores..."
+                        placeholderTextColor={colors.textMuted}
+                        value={storeSearch}
+                        onChangeText={setStoreSearch}
+                        style={[
+                          styles.inlineSearchInput,
+                          { color: colors.text },
+                        ]}
+                      />
+                      {storeSearch.length > 0 && (
+                        <TouchableOpacity onPress={() => setStoreSearch("")}>
+                          <Ionicons
+                            name="close-circle"
+                            size={16}
+                            color={colors.textMuted}
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+
+                  {(() => {
+                    const filteredStores = storeSearch.trim()
+                      ? availableStores.filter(
+                          (s: any) =>
+                            s.name
+                              ?.toLowerCase()
+                              .includes(storeSearch.toLowerCase()) ||
+                            s.address
+                              ?.toLowerCase()
+                              .includes(storeSearch.toLowerCase()),
+                        )
+                      : availableStores;
+                    return filteredStores.length === 0 ? (
+                      <Text
+                        style={[
+                          styles.emptyText,
+                          {
+                            color: colors.textMuted,
+                            textAlign: "center",
+                            paddingVertical: Spacing.md,
+                          },
+                        ]}
+                      >
+                        No stores match "{storeSearch}"
+                      </Text>
+                    ) : (
+                      filteredStores.map((s: any) => {
+                        const isSelected = selectedStoreId === s.id;
+                        return (
+                          <TouchableOpacity
+                            key={s.id}
+                            style={[
+                              styles.stockCard,
+                              Shadow.sm,
+                              {
+                                backgroundColor: isSelected
+                                  ? colors.primary + "10"
+                                  : colors.surface,
+                                borderColor: isSelected
+                                  ? colors.primary
+                                  : colors.borderLight,
+                              },
+                            ]}
+                            onPress={() => {
+                              selectStore(isSelected ? null : s.id);
+                              setStorePickerExpanded(false);
+                              setStoreSearch("");
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <View style={styles.stockRow}>
+                              <Ionicons
+                                name={
+                                  isSelected
+                                    ? "checkmark-circle"
+                                    : "storefront-outline"
+                                }
+                                size={20}
+                                color={
+                                  isSelected ? colors.primary : colors.textMuted
+                                }
+                              />
+                              <View style={styles.stockInfo}>
+                                <Text
+                                  style={[
+                                    styles.stockName,
+                                    { color: colors.text },
+                                  ]}
+                                >
+                                  {s.name}
+                                </Text>
+                                {s.address && (
+                                  <Text
+                                    style={[
+                                      styles.stockQty,
+                                      { color: colors.textSecondary },
+                                    ]}
+                                  >
+                                    {s.address}
+                                  </Text>
+                                )}
+                              </View>
+                              {isSelected && (
+                                <Ionicons
+                                  name="checkmark"
+                                  size={20}
+                                  color={colors.primary}
+                                />
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })
+                    );
+                  })()}
+                </>
+              )}
             </View>
           )}
 
@@ -689,6 +1036,63 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
+  },
+  storeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  storeChipText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+  },
+  inlineSearch: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+  },
+  inlineSearchInput: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    fontSize: FontSize.sm,
+  },
+  showMoreBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginTop: Spacing.xs,
+  },
+  showMoreText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+  },
+  selectedStoreCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginTop: Spacing.xs,
+  },
+  selectedStoreName: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
   },
   totalCard: {
     padding: Spacing.lg,

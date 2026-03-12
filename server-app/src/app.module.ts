@@ -15,6 +15,7 @@ import { ActivityLogModule } from './activity-log/activity-log.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { WarehouseUsersModule } from './warehouse-users/warehouse-users.module';
 import { SalesTargetsModule } from './sales-targets/sales-targets.module';
+import { StoresModule } from './stores/stores.module';
 
 // App
 import { AppController } from './app.controller';
@@ -75,6 +76,7 @@ import { AppService } from './app.service';
     DashboardModule,
     WarehouseUsersModule,
     SalesTargetsModule,
+    StoresModule,
   ],
   controllers: [AppController],
   providers: [

@@ -181,6 +181,7 @@ export class SalesService {
       const saleData: Partial<Sale> = {
         salesperson_id: salespersonId,
         warehouse_id: warehouseId || undefined,
+        store_id: dto.store_id || undefined,
         total_amount: totalAmount,
         payment_status: PaymentStatus.PENDING,
         status: saleStatus,
@@ -208,6 +209,7 @@ export class SalesService {
           idempotency_key: dto.idempotency_key,
           customer_name: dto.customer_name,
           warehouse_id: warehouseId,
+          store_id: dto.store_id,
           status: saleStatus,
         },
         ip_address: ip,
@@ -452,6 +454,7 @@ export class SalesService {
     payment_status?: PaymentStatus;
     status?: SaleStatus;
     warehouse_id?: string;
+    store_id?: string;
     from?: Date;
     to?: Date;
   }) {
@@ -464,6 +467,7 @@ export class SalesService {
       .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('sale.salesperson', 'salesperson')
       .leftJoinAndSelect('sale.warehouse', 'warehouse')
+      .leftJoinAndSelect('sale.store', 'store')
       .orderBy('sale.created_at', 'DESC');
 
     if (options.salesperson_id) {
@@ -484,6 +488,11 @@ export class SalesService {
     if (options.warehouse_id) {
       qb.andWhere('sale.warehouse_id = :warehouse_id', {
         warehouse_id: options.warehouse_id,
+      });
+    }
+    if (options.store_id) {
+      qb.andWhere('sale.store_id = :store_id', {
+        store_id: options.store_id,
       });
     }
     if (options.from) {
@@ -520,6 +529,7 @@ export class SalesService {
         'items.product',
         'salesperson',
         'warehouse',
+        'store',
         'approvedByUser',
         'assignedToUser',
       ],

@@ -39,11 +39,11 @@ export class StockAssignment {
   @JoinColumn({ name: 'salesperson_id' })
   salesperson: User;
 
-  @ManyToOne(() => Product, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Product, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @ManyToOne(() => Warehouse, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Warehouse, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'warehouse_id' })
   warehouse: Warehouse;
 

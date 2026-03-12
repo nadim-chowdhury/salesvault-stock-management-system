@@ -92,6 +92,23 @@ export default function AppLayout() {
         })}
       />
       <Tabs.Screen
+        name="stores"
+        options={{
+          title: "Stores",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="storefront-outline" size={size} color={color} />
+          ),
+          href: isAdmin ? undefined : null, // Hide for salesperson
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("stores", { screen: "index" });
+          },
+        })}
+      />
+      <Tabs.Screen
         name="sales"
         options={{
           title: "Sales",

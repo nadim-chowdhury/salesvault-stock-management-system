@@ -16,85 +16,82 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
+import { StoresService } from './stores.service';
+import { CreateStoreDto } from './dto/create-store.dto';
+import { UpdateStoreDto } from './dto/update-store.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '../common/enums/role.enum';
 
-@ApiTags('Products')
+@ApiTags('Stores')
 @ApiBearerAuth('JWT-auth')
-@Controller('products')
+@Controller('stores')
 @UseGuards(JwtAuthGuard, RolesGuard)
-export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+export class StoresController {
+  constructor(private readonly storesService: StoresService) {}
 
   @Post()
   @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({
-    summary: 'Create product',
-    description: 'Add a new product to the catalog',
+    summary: 'Create store',
+    description: 'Create a new retail store/outlet (ADMIN/MANAGER only)',
   })
   async create(
-    @Body() dto: CreateProductDto,
+    @Body() dto: CreateStoreDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.productsService.create(dto, userId);
+    return this.storesService.create(dto, userId);
   }
 
   @Get()
   @ApiOperation({
-    summary: 'List products',
-    description: 'Paginated product list with search and active filter',
+    summary: 'List stores',
+    description: 'Paginated list of stores with optional active filter',
   })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'is_active', required: false, type: Boolean })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('search') search?: string,
     @Query('is_active') isActive?: string,
   ) {
-    return this.productsService.findAll({
+    return this.storesService.findAll({
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
-      search,
       is_active: isActive !== undefined ? isActive === 'true' : undefined,
     });
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get product by ID' })
+  @ApiOperation({ summary: 'Get store by ID' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.productsService.findOne(id);
+    return this.storesService.findOne(id);
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Update product' })
+  @ApiOperation({ summary: 'Update store' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateProductDto,
+    @Body() dto: UpdateStoreDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.productsService.update(id, dto, userId);
+    return this.storesService.update(id, dto, userId);
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({
-    summary: 'Delete product',
-    description: 'Permanently delete a product (ADMIN only)',
+    summary: 'Delete store',
+    description: 'Permanently delete a store (ADMIN only)',
   })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') userId: string,
   ) {
-    return this.productsService.remove(id, userId);
+    return this.storesService.remove(id, userId);
   }
 }

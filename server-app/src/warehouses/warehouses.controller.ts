@@ -79,8 +79,8 @@ export class WarehousesController {
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({
-    summary: 'Soft delete warehouse',
-    description: 'Deactivates the warehouse (ADMIN only)',
+    summary: 'Delete warehouse',
+    description: 'Permanently delete a warehouse (ADMIN only)',
   })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,

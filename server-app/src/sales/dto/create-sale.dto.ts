@@ -37,6 +37,10 @@ export class CreateSaleDto {
   @IsOptional()
   warehouse_id?: string;
 
+  @IsUUID()
+  @IsOptional()
+  store_id?: string;
+
   @IsString()
   @IsOptional()
   @MaxLength(500)

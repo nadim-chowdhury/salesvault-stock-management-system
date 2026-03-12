@@ -43,7 +43,7 @@ export class SalesTarget {
   @JoinColumn({ name: 'salesperson_id' })
   salesperson: User;
 
-  @ManyToOne(() => Warehouse, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Warehouse, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'warehouse_id' })
   warehouse: Warehouse;
 

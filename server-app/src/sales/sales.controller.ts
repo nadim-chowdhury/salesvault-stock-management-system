@@ -65,6 +65,7 @@ export class SalesController {
   @ApiQuery({ name: 'payment_status', required: false, enum: PaymentStatus })
   @ApiQuery({ name: 'status', required: false, enum: SaleStatus })
   @ApiQuery({ name: 'warehouse_id', required: false })
+  @ApiQuery({ name: 'store_id', required: false })
   @ApiQuery({ name: 'from', required: false, description: 'ISO date string' })
   @ApiQuery({ name: 'to', required: false, description: 'ISO date string' })
   async findAll(
@@ -74,6 +75,7 @@ export class SalesController {
     @Query('payment_status') paymentStatus?: PaymentStatus,
     @Query('status') status?: SaleStatus,
     @Query('warehouse_id') warehouseId?: string,
+    @Query('store_id') storeId?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
@@ -84,6 +86,7 @@ export class SalesController {
       payment_status: paymentStatus,
       status,
       warehouse_id: warehouseId,
+      store_id: storeId,
       from: from ? new Date(from) : undefined,
       to: to ? new Date(to) : undefined,
     });
