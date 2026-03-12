@@ -8,6 +8,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
   Req,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -199,5 +200,18 @@ export class SalesController {
     @CurrentUser('id') adminId: string,
   ) {
     return this.salesService.cancelSale(id, adminId);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Delete sale',
+    description: 'Permanently delete a sale record (ADMIN only)',
+  })
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.salesService.remove(id, adminId);
   }
 }

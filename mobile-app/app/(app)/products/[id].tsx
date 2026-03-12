@@ -123,7 +123,7 @@ export default function ProductDetailScreen() {
           onPress: async () => {
             setActionLoading("delete");
             try {
-              await api.delete(`${Endpoints.PRODUCTS}/${id}/permanent`);
+              await api.delete(`${Endpoints.PRODUCTS}/${id}`);
               Alert.alert("Success", "Product deleted", [
                 { text: "OK", onPress: () => router.back() },
               ]);

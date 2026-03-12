@@ -447,6 +447,69 @@ export class SalesService {
     });
   }
 
+  async remove(saleId: string, adminId: string) {
+    return this.dataSource.transaction(async (manager) => {
+      // Lock the sale row first
+      const sale = await manager
+        .createQueryBuilder(Sale, 'sale')
+        .setLock('pessimistic_write')
+        .where('sale.id = :saleId', { saleId })
+        .getOne();
+
+      if (!sale) {
+        throw new NotFoundException('Sale not found');
+      }
+
+      // Load items
+      sale.items = await manager.find(SaleItem, {
+        where: { sale_id: sale.id },
+      });
+
+      // If the sale wasn't already cancelled/rejected, we need to restore stock
+      if (
+        sale.payment_status !== PaymentStatus.CANCELLED &&
+        sale.status !== SaleStatus.REJECTED
+      ) {
+        // Restore stock to assignments
+        for (const item of sale.items) {
+          const assignment = await manager
+            .createQueryBuilder(StockAssignment, 'sa')
+            .setLock('pessimistic_write')
+            .where('sa.salesperson_id = :salespersonId', {
+              salespersonId: sale.salesperson_id,
+            })
+            .andWhere('sa.product_id = :productId', {
+              productId: item.product_id,
+            })
+            .orderBy('sa.assigned_at', 'ASC')
+            .getOne();
+
+          if (assignment) {
+            assignment.quantity_remaining += item.quantity;
+            await manager.save(assignment);
+          }
+        }
+      }
+
+      // Delete the sale (items cascade automatically due to DB constraints)
+      await manager.remove(Sale, sale);
+
+      await this.activityLogService.log({
+        user_id: adminId,
+        action_type: ActionType.SALE_DELETE as ActionType,
+        entity_type: 'Sale',
+        entity_id: saleId,
+        new_data: {
+          deleted_by: adminId,
+          sale_id: saleId,
+          total_amount: sale.total_amount,
+        },
+      });
+
+      return { message: 'Sale permanently deleted' };
+    });
+  }
+
   async findAll(options: {
     page?: number;
     limit?: number;

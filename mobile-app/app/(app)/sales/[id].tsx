@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
@@ -45,7 +45,9 @@ export default function SaleDetailScreen() {
   const [sale, setSale] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
   const [cancelling, setCancelling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchSale = useCallback(async () => {
     if (!isAuthenticated) {
@@ -101,6 +103,36 @@ export default function SaleDetailScreen() {
               );
             } finally {
               setCancelling(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteSale = () => {
+    Alert.alert(
+      "Delete Sale",
+      "Are you sure you want to permanently delete this sale? This action cannot be undone.",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes, Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await api.delete(`${Endpoints.SALES}/${id}`);
+              Alert.alert("Success", "Sale has been deleted.", [
+                { text: "OK", onPress: () => router.back() },
+              ]);
+            } catch (err: any) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Failed to delete sale",
+              );
+            } finally {
+              setDeleting(false);
             }
           },
         },
@@ -354,8 +386,8 @@ export default function SaleDetailScreen() {
             </View>
           )}
 
-          {/* Cancel Sale Action */}
-          {canCancel && (
+          {/* Actions */}
+          {(canCancel || isAdmin) && (
             <View style={styles.actionsSection}>
               <View style={styles.sectionHeader}>
                 <Ionicons
@@ -367,16 +399,33 @@ export default function SaleDetailScreen() {
                   Actions
                 </Text>
               </View>
-              <Button
-                title="Cancel Sale"
-                onPress={handleCancelSale}
-                variant="danger"
-                loading={cancelling}
-              />
-              <Text style={[styles.cancelHint, { color: colors.textMuted }]}>
-                Cancelling will restore stock to the salesperson&apos;s
-                assignments
-              </Text>
+
+              {canCancel && (
+                <View style={{ marginBottom: isAdmin ? Spacing.lg : 0 }}>
+                  <Button
+                    title="Cancel Sale"
+                    onPress={handleCancelSale}
+                    variant="secondary"
+                    loading={cancelling}
+                  />
+                  <Text style={[styles.cancelHint, { color: colors.textMuted }]}>
+                    Cancelling will restore stock to the salesperson&apos;s
+                    assignments
+                  </Text>
+                </View>
+              )}
+
+              {isAdmin && (
+                <Button
+                  title="Delete Sale"
+                  onPress={handleDeleteSale}
+                  variant="danger"
+                  loading={deleting}
+                  icon={
+                    <Ionicons name="trash-outline" size={18} color="#FFF" />
+                  }
+                />
+              )}
             </View>
           )}
         </ScrollView>
