@@ -42,7 +42,7 @@ export default function PageHeader({
               style={styles.backBtn}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

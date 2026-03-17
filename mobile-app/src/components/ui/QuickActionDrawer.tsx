@@ -190,7 +190,7 @@ export default function QuickActionDrawer() {
               <DrawerItem
                 icon="layers-outline"
                 label="Stock Management"
-                onPress={() => handleNavigate("/(app)/profile/stock")}
+                onPress={() => handleNavigate("/(app)/stock")}
                 colors={colors}
               />
 

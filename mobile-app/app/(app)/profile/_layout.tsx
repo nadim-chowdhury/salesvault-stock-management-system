@@ -94,30 +94,6 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="stock"
-        options={{
-          title: "Stock Management",
-          headerLeft: backButton,
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="stock-add"
-        options={{
-          title: "Add Stock",
-          headerLeft: backButton,
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="stock-assign"
-        options={{
-          title: "Assign Stock",
-          headerLeft: backButton,
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
         name="warehouse-users"
         options={{
           title: "Warehouse Users",

@@ -634,22 +634,25 @@ export default function StockScreen() {
           />
         )}
 
-        {/* FABs stacked bottom-right */}
+        {/* Dynamic FAB based on active tab */}
         <View style={styles.fabCol}>
-          <TouchableOpacity
-            style={[styles.fabSmall, { backgroundColor: colors.primary }]}
-            onPress={() => router.push("/(app)/profile/stock-add" as any)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="add" size={20} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.fab, { backgroundColor: colors.primary }]}
-            onPress={() => router.push("/(app)/profile/stock-assign" as any)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="arrow-forward" size={22} color="#FFF" />
-          </TouchableOpacity>
+          {tab === "warehouse" ? (
+            <TouchableOpacity
+              style={[styles.fab, { backgroundColor: colors.primary }]}
+              onPress={() => router.push("/(app)/stock/add" as any)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={28} color="#FFF" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.fab, { backgroundColor: colors.primary }]}
+              onPress={() => router.push("/(app)/stock/assign" as any)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-forward" size={24} color="#FFF" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>

@@ -116,11 +116,29 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" size={size} color={color} />
           ),
+          href: isAdmin ? null : undefined, // Hide for admin/manager
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate("sales", { screen: "index" });
+          },
+        })}
+      />
+      <Tabs.Screen
+        name="stock"
+        options={{
+          title: "Stock",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="layers-outline" size={size} color={color} />
+          ),
+          href: isAdmin ? undefined : null, // Hide for salesperson
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("stock", { screen: "index" });
           },
         })}
       />

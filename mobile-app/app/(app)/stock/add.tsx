@@ -7,9 +7,10 @@ import {
   Alert,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../src/services/api";
 import { Endpoints } from "../../../src/constants/api";
@@ -31,6 +32,10 @@ export default function AddStockScreen() {
   const scheme = useColorScheme() ?? "light";
   const colors = Colors[scheme];
   const router = useRouter();
+  const { productId, warehouseId } = useLocalSearchParams<{
+    productId: string;
+    warehouseId: string;
+  }>();
   const { setThemeMode } = useThemeStore();
 
   const toggleTheme = () => {
@@ -48,6 +53,10 @@ export default function AddStockScreen() {
   const [showProducts, setShowProducts] = useState(false);
   const [showWarehouses, setShowWarehouses] = useState(false);
 
+  // Search states
+  const [productSearch, setProductSearch] = useState("");
+  const [warehouseSearch, setWarehouseSearch] = useState("");
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -58,19 +67,29 @@ export default function AddStockScreen() {
           api.get(Endpoints.WAREHOUSES, { params: { limit: 100 } }),
         ]);
         const prodResult = prodRes.data?.data || prodRes.data;
-        setProducts(
+        const fetchedProducts =
           prodResult?.data ||
-            prodResult?.items ||
-            (Array.isArray(prodResult) ? prodResult : []),
-        );
+          prodResult?.items ||
+          (Array.isArray(prodResult) ? prodResult : []);
+        setProducts(fetchedProducts);
+
         const whResult = whRes.data?.data || whRes.data;
-        setWarehouses(
-          (
-            whResult?.data ||
-            whResult?.items ||
-            (Array.isArray(whResult) ? whResult : [])
-          ).filter((w: any) => w.is_active !== false),
-        );
+        const fetchedWarehouses = (
+          whResult?.data ||
+          whResult?.items ||
+          (Array.isArray(whResult) ? whResult : [])
+        ).filter((w: any) => w.is_active !== false);
+        setWarehouses(fetchedWarehouses);
+
+        // Pre-selection logic
+        if (productId) {
+          const p = fetchedProducts.find((p: any) => p.id === productId);
+          if (p) setSelectedProduct(p);
+        }
+        if (warehouseId) {
+          const w = fetchedWarehouses.find((w: any) => w.id === warehouseId);
+          if (w) setSelectedWarehouse(w);
+        }
       } catch (err) {
         console.error("Fetch error:", err);
       } finally {
@@ -78,7 +97,7 @@ export default function AddStockScreen() {
       }
     };
     fetchData();
-  }, []);
+  }, [productId, warehouseId]);
 
   const handleAdd = async () => {
     if (!selectedProduct || !selectedWarehouse || !quantity.trim()) {
@@ -122,6 +141,16 @@ export default function AddStockScreen() {
       </View>
     );
   }
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+    (p.sku && p.sku.toLowerCase().includes(productSearch.toLowerCase()))
+  );
+
+  const filteredWarehouses = warehouses.filter((w) =>
+    w.name.toLowerCase().includes(warehouseSearch.toLowerCase()) ||
+    (w.location && w.location.toLowerCase().includes(warehouseSearch.toLowerCase()))
+  );
 
   return (
     <SafeAreaView
@@ -198,6 +227,7 @@ export default function AddStockScreen() {
               onPress={() => {
                 setShowProducts(!showProducts);
                 setShowWarehouses(false);
+                if (!showProducts) setProductSearch("");
               }}
               activeOpacity={0.7}
             >
@@ -225,55 +255,68 @@ export default function AddStockScreen() {
                   },
                 ]}
               >
-                {products.map((p) => (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[
-                      styles.dropdownItem,
-                      selectedProduct?.id === p.id && {
-                        backgroundColor: colors.primary + "10",
-                      },
-                    ]}
-                    onPress={() => {
-                      setSelectedProduct(p);
-                      setShowProducts(false);
-                    }}
-                  >
-                    <Text style={[styles.dropdownText, { color: colors.text }]}>
-                      {p.name}
+                <View style={[styles.dropdownSearch, { borderBottomColor: colors.borderLight }]}>
+                  <Ionicons name="search-outline" size={14} color={colors.textMuted} />
+                  <TextInput
+                    placeholder="Search product..."
+                    placeholderTextColor={colors.textMuted}
+                    value={productSearch}
+                    onChangeText={setProductSearch}
+                    style={[styles.dropdownSearchInput, { color: colors.text }]}
+                    autoFocus
+                  />
+                </View>
+                <ScrollView nestedScrollEnabled style={{ maxHeight: 200 }}>
+                  {filteredProducts.map((p) => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[
+                        styles.dropdownItem,
+                        selectedProduct?.id === p.id && {
+                          backgroundColor: colors.primary + "10",
+                        },
+                      ]}
+                      onPress={() => {
+                        setSelectedProduct(p);
+                        setShowProducts(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownText, { color: colors.text }]}>
+                        {p.name}
+                      </Text>
+                      <View style={styles.dropdownMetaRow}>
+                        <Text
+                          style={[
+                            styles.dropdownMeta,
+                            { color: colors.textMuted },
+                          ]}
+                        >
+                          SKU: {p.sku || "—"}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.dropdownStock,
+                            {
+                              color:
+                                p.total_stock > 0
+                                  ? colors.success
+                                  : colors.danger,
+                            },
+                          ]}
+                        >
+                          Stock: {p.total_stock || 0}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                  {filteredProducts.length === 0 && (
+                    <Text
+                      style={[styles.dropdownEmpty, { color: colors.textMuted }]}
+                    >
+                      No products found
                     </Text>
-                    <View style={styles.dropdownMetaRow}>
-                      <Text
-                        style={[
-                          styles.dropdownMeta,
-                          { color: colors.textMuted },
-                        ]}
-                      >
-                        SKU: {p.sku || "—"}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.dropdownStock,
-                          {
-                            color:
-                              p.total_stock > 0
-                                ? colors.success
-                                : colors.danger,
-                          },
-                        ]}
-                      >
-                        Stock: {p.total_stock || 0}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-                {products.length === 0 && (
-                  <Text
-                    style={[styles.dropdownEmpty, { color: colors.textMuted }]}
-                  >
-                    No products found
-                  </Text>
-                )}
+                  )}
+                </ScrollView>
               </View>
             )}
           </View>
@@ -300,6 +343,7 @@ export default function AddStockScreen() {
               onPress={() => {
                 setShowWarehouses(!showWarehouses);
                 setShowProducts(false);
+                if (!showWarehouses) setWarehouseSearch("");
               }}
               activeOpacity={0.7}
             >
@@ -329,42 +373,55 @@ export default function AddStockScreen() {
                   },
                 ]}
               >
-                {warehouses.map((w) => (
-                  <TouchableOpacity
-                    key={w.id}
-                    style={[
-                      styles.dropdownItem,
-                      selectedWarehouse?.id === w.id && {
-                        backgroundColor: colors.primary + "10",
-                      },
-                    ]}
-                    onPress={() => {
-                      setSelectedWarehouse(w);
-                      setShowWarehouses(false);
-                    }}
-                  >
-                    <Text style={[styles.dropdownText, { color: colors.text }]}>
-                      {w.name}
-                    </Text>
-                    {w.location && (
-                      <Text
-                        style={[
-                          styles.dropdownMeta,
-                          { color: colors.textMuted },
-                        ]}
-                      >
-                        {w.location}
+                <View style={[styles.dropdownSearch, { borderBottomColor: colors.borderLight }]}>
+                  <Ionicons name="search-outline" size={14} color={colors.textMuted} />
+                  <TextInput
+                    placeholder="Search warehouse..."
+                    placeholderTextColor={colors.textMuted}
+                    value={warehouseSearch}
+                    onChangeText={setWarehouseSearch}
+                    style={[styles.dropdownSearchInput, { color: colors.text }]}
+                    autoFocus
+                  />
+                </View>
+                <ScrollView nestedScrollEnabled style={{ maxHeight: 200 }}>
+                  {filteredWarehouses.map((w) => (
+                    <TouchableOpacity
+                      key={w.id}
+                      style={[
+                        styles.dropdownItem,
+                        selectedWarehouse?.id === w.id && {
+                          backgroundColor: colors.primary + "10",
+                        },
+                      ]}
+                      onPress={() => {
+                        setSelectedWarehouse(w);
+                        setShowWarehouses(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownText, { color: colors.text }]}>
+                        {w.name}
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-                {warehouses.length === 0 && (
-                  <Text
-                    style={[styles.dropdownEmpty, { color: colors.textMuted }]}
-                  >
-                    No warehouses found
-                  </Text>
-                )}
+                      {w.location && (
+                        <Text
+                          style={[
+                            styles.dropdownMeta,
+                            { color: colors.textMuted },
+                          ]}
+                        >
+                          {w.location}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                  {filteredWarehouses.length === 0 && (
+                    <Text
+                      style={[styles.dropdownEmpty, { color: colors.textMuted }]}
+                    >
+                      No warehouses found
+                    </Text>
+                  )}
+                </ScrollView>
               </View>
             )}
           </View>
@@ -481,8 +538,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.xs,
-    maxHeight: 200,
+    maxHeight: 280,
     overflow: "hidden",
+  },
+  dropdownSearch: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    borderBottomWidth: 1,
+    height: 44,
+  },
+  dropdownSearchInput: {
+    flex: 1,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSize.sm,
+    height: "100%",
   },
   dropdownItem: {
     padding: Spacing.md,

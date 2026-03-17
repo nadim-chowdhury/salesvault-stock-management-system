@@ -382,6 +382,19 @@ export default function ProductDetailScreen() {
               </View>
 
               <Button
+                title="Add Stock to Warehouse"
+                onPress={() =>
+                  router.push({
+                    pathname: "/(app)/stock/add",
+                    params: { productId: product.id },
+                  })
+                }
+                variant="primary"
+                icon={<Ionicons name="add-circle-outline" size={18} color="#FFF" />}
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              <Button
                 title="Edit Product"
                 onPress={() =>
                   router.push({

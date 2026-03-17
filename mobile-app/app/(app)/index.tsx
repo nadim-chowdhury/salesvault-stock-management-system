@@ -259,7 +259,7 @@ function AdminDashboard({
         <DashMenuItem
           icon="layers-outline"
           label="Stock Management"
-          onPress={() => router.push("/(app)/profile/stock")}
+          onPress={() => router.push("/(app)/stock")}
           colors={colors}
         />
         <DashMenuItem

@@ -7,6 +7,7 @@ import {
   Alert,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
@@ -51,6 +52,11 @@ export default function AssignStockScreen() {
   const [showProducts, setShowProducts] = useState(false);
   const [showWarehouses, setShowWarehouses] = useState(false);
   const [showSalespersons, setShowSalespersons] = useState(false);
+
+  // Search states
+  const [productSearch, setProductSearch] = useState("");
+  const [warehouseSearch, setWarehouseSearch] = useState("");
+  const [salespersonSearch, setSalespersonSearch] = useState("");
 
   const closeAllDropdowns = () => {
     setShowProducts(false);
@@ -159,87 +165,111 @@ export default function AssignStockScreen() {
     onSelect: (item: any) => void,
     renderItemText: (item: any) => { primary: string; secondary?: string },
     emptyText: string,
-  ) => (
-    <View style={styles.sectionWrapper}>
-      <View style={styles.sectionHeader}>
-        <Ionicons name={icon} size={16} color={colors.primary} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          {label} *
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={[
-          styles.picker,
-          Shadow.sm,
-          {
-            backgroundColor: colors.surface,
-            borderColor: selected ? colors.primary : colors.borderLight,
-          },
-        ]}
-        onPress={onToggle}
-        activeOpacity={0.7}
-      >
-        <Text
+    searchState: { value: string; setter: (v: string) => void },
+    searchPlaceholder: string,
+  ) => {
+    const filteredItems = items.filter((item) => {
+      const { primary, secondary } = renderItemText(item);
+      const search = searchState.value.toLowerCase();
+      return (
+        primary.toLowerCase().includes(search) ||
+        (secondary && secondary.toLowerCase().includes(search))
+      );
+    });
+
+    return (
+      <View style={styles.sectionWrapper}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name={icon} size={16} color={colors.primary} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            {label} *
+          </Text>
+        </View>
+        <TouchableOpacity
           style={[
-            styles.pickerText,
-            { color: selected ? colors.text : colors.textMuted },
-          ]}
-        >
-          {selected ? displayText : placeholder}
-        </Text>
-        <Ionicons
-          name={isOpen ? "chevron-up" : "chevron-down"}
-          size={18}
-          color={colors.textMuted}
-        />
-      </TouchableOpacity>
-      {isOpen && (
-        <View
-          style={[
-            styles.dropdownList,
+            styles.picker,
+            Shadow.sm,
             {
               backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
+              borderColor: selected ? colors.primary : colors.borderLight,
             },
           ]}
+          onPress={onToggle}
+          activeOpacity={0.7}
         >
-          <ScrollView nestedScrollEnabled style={{ maxHeight: 180 }}>
-            {items.map((item) => {
-              const { primary, secondary } = renderItemText(item);
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    styles.dropdownItem,
-                    selected?.id === item.id && {
-                      backgroundColor: colors.primary + "10",
-                    },
-                  ]}
-                  onPress={() => onSelect(item)}
-                >
-                  <Text style={[styles.dropdownText, { color: colors.text }]}>
-                    {primary}
-                  </Text>
-                  {secondary && (
-                    <Text
-                      style={[styles.dropdownMeta, { color: colors.textMuted }]}
-                    >
-                      {secondary}
+          <Text
+            style={[
+              styles.pickerText,
+              { color: selected ? colors.text : colors.textMuted },
+            ]}
+          >
+            {selected ? displayText : placeholder}
+          </Text>
+          <Ionicons
+            name={isOpen ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={colors.textMuted}
+          />
+        </TouchableOpacity>
+        {isOpen && (
+          <View
+            style={[
+              styles.dropdownList,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
+            ]}
+          >
+            <View style={[styles.dropdownSearch, { borderBottomColor: colors.borderLight }]}>
+              <Ionicons name="search-outline" size={14} color={colors.textMuted} />
+              <TextInput
+                placeholder={searchPlaceholder}
+                placeholderTextColor={colors.textMuted}
+                value={searchState.value}
+                onChangeText={searchState.setter}
+                style={[styles.dropdownSearchInput, { color: colors.text }]}
+                autoFocus
+              />
+            </View>
+            <ScrollView nestedScrollEnabled style={{ maxHeight: 200 }}>
+              {filteredItems.map((item) => {
+                const { primary, secondary } = renderItemText(item);
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.dropdownItem,
+                      selected?.id === item.id && {
+                        backgroundColor: colors.primary + "10",
+                      },
+                    ]}
+                    onPress={() => onSelect(item)}
+                  >
+                    <Text style={[styles.dropdownText, { color: colors.text }]}>
+                      {primary}
                     </Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-            {items.length === 0 && (
-              <Text style={[styles.dropdownEmpty, { color: colors.textMuted }]}>
-                {emptyText}
-              </Text>
-            )}
-          </ScrollView>
-        </View>
-      )}
-    </View>
-  );
+                    {secondary && (
+                      <Text
+                        style={[styles.dropdownMeta, { color: colors.textMuted }]}
+                      >
+                        {secondary}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+              {filteredItems.length === 0 && (
+                <Text style={[styles.dropdownEmpty, { color: colors.textMuted }]}>
+                  {emptyText}
+                </Text>
+              )}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView
@@ -302,8 +332,10 @@ export default function AssignStockScreen() {
             "Select a product",
             showProducts,
             () => {
+              const next = !showProducts;
               closeAllDropdowns();
-              setShowProducts(!showProducts);
+              setShowProducts(next);
+              if (next) setProductSearch("");
             },
             products,
             (p) => {
@@ -312,6 +344,8 @@ export default function AssignStockScreen() {
             },
             (p) => ({ primary: p.name, secondary: `SKU: ${p.sku || "—"}` }),
             "No products found",
+            { value: productSearch, setter: setProductSearch },
+            "Search product...",
           )}
 
           {renderPicker(
@@ -324,8 +358,10 @@ export default function AssignStockScreen() {
             "Select a warehouse",
             showWarehouses,
             () => {
+              const next = !showWarehouses;
               closeAllDropdowns();
-              setShowWarehouses(!showWarehouses);
+              setShowWarehouses(next);
+              if (next) setWarehouseSearch("");
             },
             warehouses,
             (w) => {
@@ -334,6 +370,8 @@ export default function AssignStockScreen() {
             },
             (w) => ({ primary: w.name, secondary: w.location || undefined }),
             "No warehouses found",
+            { value: warehouseSearch, setter: setWarehouseSearch },
+            "Search warehouse...",
           )}
 
           {renderPicker(
@@ -346,8 +384,10 @@ export default function AssignStockScreen() {
             "Select a salesperson",
             showSalespersons,
             () => {
+              const next = !showSalespersons;
               closeAllDropdowns();
-              setShowSalespersons(!showSalespersons);
+              setShowSalespersons(next);
+              if (next) setSalespersonSearch("");
             },
             salespersons,
             (s) => {
@@ -356,6 +396,8 @@ export default function AssignStockScreen() {
             },
             (s) => ({ primary: s.name, secondary: s.email }),
             "No salespersons found",
+            { value: salespersonSearch, setter: setSalespersonSearch },
+            "Search salesperson...",
           )}
 
           {/* Quantity */}
@@ -485,7 +527,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.xs,
+    maxHeight: 280,
     overflow: "hidden",
+  },
+  dropdownSearch: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    borderBottomWidth: 1,
+    height: 44,
+  },
+  dropdownSearchInput: {
+    flex: 1,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSize.sm,
+    height: "100%",
   },
   dropdownItem: {
     padding: Spacing.md,

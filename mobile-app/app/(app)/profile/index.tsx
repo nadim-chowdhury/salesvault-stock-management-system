@@ -121,7 +121,7 @@ export default function ProfileScreen() {
               <MenuItem
                 icon="layers-outline"
                 label="Stock Management"
-                onPress={() => router.push("/(app)/profile/stock")}
+                onPress={() => router.push("/(app)/stock" as any)}
                 colors={colors}
               />
               <MenuItem
