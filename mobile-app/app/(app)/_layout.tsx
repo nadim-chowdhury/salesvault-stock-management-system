@@ -4,12 +4,7 @@ import { Platform } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../src/stores/auth-store";
-import {
-  Colors,
-  FontSize,
-  FontWeight,
-  Spacing,
-} from "../../src/constants/theme";
+import { Colors, FontSize, FontWeight } from "../../src/constants/theme";
 
 export default function AppLayout() {
   const scheme = useColorScheme() ?? "light";
@@ -92,23 +87,6 @@ export default function AppLayout() {
         })}
       />
       <Tabs.Screen
-        name="stores"
-        options={{
-          title: "Stores",
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="storefront-outline" size={size} color={color} />
-          ),
-          href: isAdmin ? undefined : null, // Hide for salesperson
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate("stores", { screen: "index" });
-          },
-        })}
-      />
-      <Tabs.Screen
         name="sales"
         options={{
           title: "Sales",
@@ -142,7 +120,23 @@ export default function AppLayout() {
           },
         })}
       />
-
+      <Tabs.Screen
+        name="stores"
+        options={{
+          title: "Stores",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="storefront-outline" size={size} color={color} />
+          ),
+          href: isAdmin ? undefined : null, // Hide for salesperson
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("stores", { screen: "index" });
+          },
+        })}
+      />
       <Tabs.Screen
         name="profile"
         options={{

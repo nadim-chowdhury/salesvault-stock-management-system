@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
+  FlatList,
 } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
@@ -29,6 +30,7 @@ import Button from "../../../src/components/ui/Button";
 import Input from "../../../src/components/ui/Input";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PageHeader from "@/src/components/ui/PageHeader";
+import Badge from "../../../src/components/ui/Badge";
 
 interface SaleItem {
   product_id: string;
@@ -58,37 +60,18 @@ export default function CreateSaleScreen() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Store Selection
   const [availableStores, setAvailableStores] = useState<any[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-
-  // Big data handling state
-  const [productSearch, setProductSearch] = useState("");
-  const [visibleProductCount, setVisibleProductCount] = useState(20);
   const [storeSearch, setStoreSearch] = useState("");
-  const [storePickerExpanded, setStorePickerExpanded] = useState(true);
+  const [showStorePicker, setShowStorePicker] = useState(false);
 
-  // Helper: select/deselect store and auto-fill customer fields
-  const selectStore = (storeId: string | null) => {
-    // If deselecting, clear customer fields if they still match the store
-    if (!storeId && selectedStoreId) {
-      const prev = availableStores.find((s: any) => s.id === selectedStoreId);
-      if (prev) {
-        if (customerName === prev.name) setCustomerName("");
-        if (customerPhone === (prev.phone || "")) setCustomerPhone("");
-      }
-    }
-    setSelectedStoreId(storeId);
-    // If selecting, auto-fill customer fields
-    if (storeId) {
-      const store = availableStores.find((s: any) => s.id === storeId);
-      if (store) {
-        setCustomerName(store.name || "");
-        setCustomerPhone(store.phone || "");
-      }
-    }
-  };
+  // Product Modal
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [prodSearch, setProdSearch] = useState("");
 
-  // Manual Quantity Modal State
+  // Quantity Modal
   const [qtyModalVisible, setQtyModalVisible] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [manualQtyValue, setManualQtyValue] = useState("");
@@ -126,14 +109,12 @@ export default function CreateSaleScreen() {
       setMyStock(stockItems);
     } catch (err) {
       console.error("Admin stock fetch error:", err);
-      // Fallback to product catalog if stock endpoint is unavailable
       await fetchProducts();
     } finally {
       setLoading(false);
     }
   }, [fetchProducts]);
 
-  // Fetch active stores
   useEffect(() => {
     api
       .get(Endpoints.STORES, { params: { is_active: "true", limit: 100 } })
@@ -149,16 +130,11 @@ export default function CreateSaleScreen() {
   }, []);
 
   useEffect(() => {
-    // Wait for user to be loaded from the auth store
     if (!user) return;
-
     setLoading(true);
-
     if (isAdminOrManager) {
-      // ADMIN/MANAGER: use warehouse stock so available quantity is accurate
       fetchAdminStock();
     } else {
-      // SALESPERSON: fetch assigned stock, fallback to products on 403
       api
         .get(Endpoints.MY_STOCK)
         .then((res) => {
@@ -167,8 +143,6 @@ export default function CreateSaleScreen() {
           setLoading(false);
         })
         .catch((err) => {
-          console.error("My stock error:", err?.response?.status);
-          // Fallback: if 403, fetch products instead
           if (err?.response?.status === 403) {
             fetchProducts();
           } else {
@@ -177,6 +151,17 @@ export default function CreateSaleScreen() {
         });
     }
   }, [user, isAdminOrManager, fetchProducts, fetchAdminStock]);
+
+  const selectStore = (store: any | null) => {
+    if (!store) {
+      setSelectedStoreId(null);
+      return;
+    }
+    setSelectedStoreId(store.id);
+    setCustomerName(store.name || "");
+    setCustomerPhone(store.phone || "");
+    setShowStorePicker(false);
+  };
 
   const addItem = (stock: any) => {
     const pid = stock.product_id || stock.product?.id;
@@ -194,6 +179,8 @@ export default function CreateSaleScreen() {
         available: stock.quantity_remaining ?? stock.quantity ?? 999,
       },
     ]);
+    setShowProductModal(false);
+    setProdSearch("");
   };
 
   const updateQuantity = (index: number, qty: string) => {
@@ -214,7 +201,6 @@ export default function CreateSaleScreen() {
 
   const handleManualQtySave = () => {
     if (editingItemIndex === null) return;
-
     const parsed = parseInt(manualQtyValue);
     if (isNaN(parsed) || parsed < 1) {
       Alert.alert(
@@ -223,16 +209,11 @@ export default function CreateSaleScreen() {
       );
       return;
     }
-
     const available = items[editingItemIndex].available;
     if (parsed > available) {
-      Alert.alert(
-        "Insufficient Stock",
-        `Only ${available} units available in stock.`,
-      );
+      Alert.alert("Insufficient Stock", `Only ${available} units available.`);
       return;
     }
-
     updateQuantity(editingItemIndex, manualQtyValue);
     setQtyModalVisible(false);
     setEditingItemIndex(null);
@@ -278,6 +259,17 @@ export default function CreateSaleScreen() {
     }
   };
 
+  const filteredStores = availableStores.filter(
+    (s) =>
+      s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
+      (s.address &&
+        s.address.toLowerCase().includes(storeSearch.toLowerCase())),
+  );
+
+  const filteredStock = myStock.filter((s) =>
+    (s.product?.name || "").toLowerCase().includes(prodSearch.toLowerCase()),
+  );
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.primary }]}
@@ -309,231 +301,167 @@ export default function CreateSaleScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={styles.headerSection}>
-            <View
-              style={[
-                styles.iconCircle,
-                { backgroundColor: colors.primary + "15" },
-              ]}
-            >
-              <Ionicons
-                name="receipt-outline"
-                size={28}
-                color={colors.primary}
-              />
-            </View>
-            <Text style={[styles.title, { color: colors.text }]}>New Sale</Text>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-              {isAdminOrManager
-                ? "Select products from the catalog and record a sale"
-                : "Select products from your assigned stock"}
-            </Text>
-          </View>
-
-          {/* Available Stock */}
+          {/* Store Selection */}
           <View style={styles.sectionWrapper}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="cube" size={16} color={colors.primary} />
+              <Ionicons name="storefront" size={16} color={colors.primary} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Available Stock ({myStock.length})
+                Store (optional)
               </Text>
             </View>
-
-            {/* Product Search */}
-            {!loading && myStock.length > 5 && (
+            <TouchableOpacity
+              style={[
+                styles.pickerBtn,
+                Shadow.sm,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: selectedStoreId
+                    ? colors.primary
+                    : colors.borderLight,
+                  padding: Spacing.lg,
+                },
+              ]}
+              onPress={() => setShowStorePicker(!showStorePicker)}
+            >
+              <Text
+                style={{
+                  color: selectedStoreId ? colors.text : colors.textMuted,
+                }}
+              >
+                {selectedStoreId
+                  ? availableStores.find((s) => s.id === selectedStoreId)?.name
+                  : "Select Store"}
+              </Text>
+              <Ionicons
+                name={showStorePicker ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+            {showStorePicker && (
               <View
                 style={[
-                  styles.inlineSearch,
+                  styles.pickerDropdown,
                   {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.borderLight,
                   },
                 ]}
               >
-                <Ionicons
-                  name="search-outline"
-                  size={16}
-                  color={colors.textMuted}
-                />
                 <TextInput
-                  placeholder="Search products..."
+                  placeholder="Search store..."
                   placeholderTextColor={colors.textMuted}
-                  value={productSearch}
-                  onChangeText={(t) => {
-                    setProductSearch(t);
-                    setVisibleProductCount(20);
-                  }}
-                  style={[styles.inlineSearchInput, { color: colors.text }]}
+                  style={[
+                    styles.pickerSearch,
+                    {
+                      color: colors.text,
+                      borderBottomColor: colors.borderLight,
+                    },
+                  ]}
+                  value={storeSearch}
+                  onChangeText={setStoreSearch}
+                  autoFocus
                 />
-                {productSearch.length > 0 && (
-                  <TouchableOpacity onPress={() => setProductSearch("")}>
-                    <Ionicons
-                      name="close-circle"
-                      size={16}
-                      color={colors.textMuted}
-                    />
+                <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                  <TouchableOpacity
+                    style={styles.pickerItem}
+                    onPress={() => selectStore(null)}
+                  >
+                    <Text style={{ color: colors.textMuted }}>
+                      No Store (General Sale)
+                    </Text>
                   </TouchableOpacity>
-                )}
-              </View>
-            )}
-
-            {loading ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-                style={{ paddingVertical: Spacing.xl }}
-              />
-            ) : myStock.length === 0 ? (
-              <View style={styles.emptyStock}>
-                <Ionicons
-                  name="cube-outline"
-                  size={32}
-                  color={colors.textMuted}
-                />
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                  {isAdminOrManager
-                    ? "No active products found"
-                    : "No stock assigned to you"}
-                </Text>
-              </View>
-            ) : (
-              (() => {
-                const filtered = productSearch.trim()
-                  ? myStock.filter((s) =>
-                      (s.product?.name || "")
-                        .toLowerCase()
-                        .includes(productSearch.toLowerCase()),
-                    )
-                  : myStock;
-                const visible = filtered.slice(0, visibleProductCount);
-                const hasMoreProducts = filtered.length > visibleProductCount;
-                return (
-                  <>
-                    {visible.length === 0 && (
+                  {filteredStores.map((s) => (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={styles.pickerItem}
+                      onPress={() => selectStore(s)}
+                    >
                       <Text
-                        style={[
-                          styles.emptyText,
-                          {
-                            color: colors.textMuted,
-                            textAlign: "center",
-                            paddingVertical: Spacing.lg,
-                          },
-                        ]}
+                        style={{
+                          color: colors.text,
+                          fontWeight: FontWeight.medium,
+                        }}
                       >
-                        No products match "{productSearch}"
+                        {s.name}
                       </Text>
-                    )}
-                    {visible.map((stock: any, i: number) => {
-                      const pid = stock.product_id || stock.product?.id;
-                      const isAdded = items.some((it) => it.product_id === pid);
-                      return (
-                        <TouchableOpacity
-                          key={pid || i}
-                          style={[
-                            styles.stockCard,
-                            !isAdded && Shadow.sm,
-                            {
-                              backgroundColor: isAdded
-                                ? colors.primary + "10"
-                                : colors.surface,
-                              borderColor: isAdded
-                                ? colors.primary
-                                : colors.borderLight,
-                            },
-                          ]}
-                          onPress={() => addItem(stock)}
-                          activeOpacity={0.7}
-                          disabled={isAdded}
-                        >
-                          <View style={styles.stockRow}>
-                            <Ionicons
-                              name={
-                                isAdded
-                                  ? "checkmark-circle"
-                                  : "add-circle-outline"
-                              }
-                              size={22}
-                              color={
-                                isAdded ? colors.primary : colors.textMuted
-                              }
-                            />
-                            <View style={styles.stockInfo}>
-                              <Text
-                                style={[
-                                  styles.stockName,
-                                  { color: colors.text },
-                                ]}
-                              >
-                                {stock.product?.name || "Product"}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.stockQty,
-                                  { color: colors.textSecondary },
-                                ]}
-                              >
-                                Available:{" "}
-                                {stock.quantity_remaining ?? stock.quantity}
-                              </Text>
-                            </View>
-                            <Text
-                              style={[
-                                styles.stockPrice,
-                                { color: colors.primary },
-                              ]}
-                            >
-                              ৳
-                              {Number(
-                                stock.product?.price || 0,
-                              ).toLocaleString()}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
-                    {hasMoreProducts && (
-                      <TouchableOpacity
-                        style={[
-                          styles.showMoreBtn,
-                          { borderColor: colors.primary },
-                        ]}
-                        onPress={() => setVisibleProductCount((p) => p + 20)}
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={[
-                            styles.showMoreText,
-                            { color: colors.primary },
-                          ]}
-                        >
-                          Show more ({filtered.length - visibleProductCount}{" "}
-                          remaining)
-                        </Text>
-                        <Ionicons
-                          name="chevron-down"
-                          size={16}
-                          color={colors.primary}
-                        />
-                      </TouchableOpacity>
-                    )}
-                  </>
-                );
-              })()
+                      <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+                        {s.address}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
             )}
           </View>
 
-          {/* Selected Items */}
-          {items.length > 0 && (
-            <View style={styles.sectionWrapper}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="cart" size={16} color={colors.primary} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  Sale Items ({items.length})
+          {/* Customer Info */}
+          <View style={styles.sectionWrapper}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="person" size={16} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Customer Info
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.formCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderLight,
+                },
+                Shadow.sm,
+              ]}
+            >
+              <Input
+                label="Customer Name"
+                placeholder="Name"
+                value={customerName}
+                onChangeText={setCustomerName}
+              />
+              <Input
+                label="Customer Phone"
+                placeholder="Phone"
+                value={customerPhone}
+                onChangeText={setCustomerPhone}
+                keyboardType="phone-pad"
+              />
+            </View>
+          </View>
+
+          {/* Sale Items */}
+          <View style={styles.sectionWrapper}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="cart" size={16} color={colors.primary} />
+              <Text
+                style={[styles.sectionTitle, { color: colors.text, flex: 1 }]}
+              >
+                Sale Items ({items.length})
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.addItemBtn,
+                  { backgroundColor: colors.primary + "15" },
+                ]}
+                onPress={() => setShowProductModal(true)}
+              >
+                <Ionicons name="add" size={18} color={colors.primary} />
+                <Text
+                  style={{ color: colors.primary, fontWeight: FontWeight.bold }}
+                >
+                  Add Product
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {items.length === 0 ? (
+              <View style={styles.emptyItems}>
+                <Text style={{ color: colors.textMuted }}>
+                  No products added to this sale
                 </Text>
               </View>
-
-              {items.map((item, i) => (
+            ) : (
+              items.map((item, i) => (
                 <View
                   key={i}
                   style={[
@@ -601,248 +529,18 @@ export default function CreateSaleScreen() {
                     </TouchableOpacity>
                   </View>
                 </View>
-              ))}
-            </View>
-          )}
-
-          {/* Store Picker */}
-          {availableStores.length > 0 && (
-            <View style={styles.sectionWrapper}>
-              <TouchableOpacity
-                style={styles.sectionHeader}
-                onPress={() => setStorePickerExpanded(!storePickerExpanded)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="storefront" size={16} color={colors.primary} />
-                <Text
-                  style={[styles.sectionTitle, { color: colors.text, flex: 1 }]}
-                >
-                  Store (optional)
-                </Text>
-                <Ionicons
-                  name={storePickerExpanded ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color={colors.textMuted}
-                />
-              </TouchableOpacity>
-
-              {/* Selected store indicator */}
-              {selectedStoreId && !storePickerExpanded && (
-                <View
-                  style={[
-                    styles.selectedStoreCard,
-                    {
-                      backgroundColor: colors.primary + "10",
-                      borderColor: colors.primary,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color={colors.primary}
-                  />
-                  <Text
-                    style={[
-                      styles.selectedStoreName,
-                      { color: colors.primary },
-                    ]}
-                  >
-                    {availableStores.find((s: any) => s.id === selectedStoreId)
-                      ?.name || "Selected"}
-                  </Text>
-                  <TouchableOpacity onPress={() => selectStore(null)}>
-                    <Ionicons
-                      name="close-circle"
-                      size={18}
-                      color={colors.textMuted}
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {storePickerExpanded && (
-                <>
-                  {/* Store search */}
-                  {availableStores.length > 5 && (
-                    <View
-                      style={[
-                        styles.inlineSearch,
-                        {
-                          backgroundColor: colors.surfaceSecondary,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="search-outline"
-                        size={16}
-                        color={colors.textMuted}
-                      />
-                      <TextInput
-                        placeholder="Search stores..."
-                        placeholderTextColor={colors.textMuted}
-                        value={storeSearch}
-                        onChangeText={setStoreSearch}
-                        style={[
-                          styles.inlineSearchInput,
-                          { color: colors.text },
-                        ]}
-                      />
-                      {storeSearch.length > 0 && (
-                        <TouchableOpacity onPress={() => setStoreSearch("")}>
-                          <Ionicons
-                            name="close-circle"
-                            size={16}
-                            color={colors.textMuted}
-                          />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  )}
-
-                  {(() => {
-                    const filteredStores = storeSearch.trim()
-                      ? availableStores.filter(
-                          (s: any) =>
-                            s.name
-                              ?.toLowerCase()
-                              .includes(storeSearch.toLowerCase()) ||
-                            s.address
-                              ?.toLowerCase()
-                              .includes(storeSearch.toLowerCase()),
-                        )
-                      : availableStores;
-                    return filteredStores.length === 0 ? (
-                      <Text
-                        style={[
-                          styles.emptyText,
-                          {
-                            color: colors.textMuted,
-                            textAlign: "center",
-                            paddingVertical: Spacing.md,
-                          },
-                        ]}
-                      >
-                        No stores match "{storeSearch}"
-                      </Text>
-                    ) : (
-                      filteredStores.map((s: any) => {
-                        const isSelected = selectedStoreId === s.id;
-                        return (
-                          <TouchableOpacity
-                            key={s.id}
-                            style={[
-                              styles.stockCard,
-                              Shadow.sm,
-                              {
-                                backgroundColor: isSelected
-                                  ? colors.primary + "10"
-                                  : colors.surface,
-                                borderColor: isSelected
-                                  ? colors.primary
-                                  : colors.borderLight,
-                              },
-                            ]}
-                            onPress={() => {
-                              selectStore(isSelected ? null : s.id);
-                              setStorePickerExpanded(false);
-                              setStoreSearch("");
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <View style={styles.stockRow}>
-                              <Ionicons
-                                name={
-                                  isSelected
-                                    ? "checkmark-circle"
-                                    : "storefront-outline"
-                                }
-                                size={20}
-                                color={
-                                  isSelected ? colors.primary : colors.textMuted
-                                }
-                              />
-                              <View style={styles.stockInfo}>
-                                <Text
-                                  style={[
-                                    styles.stockName,
-                                    { color: colors.text },
-                                  ]}
-                                >
-                                  {s.name}
-                                </Text>
-                                {s.address && (
-                                  <Text
-                                    style={[
-                                      styles.stockQty,
-                                      { color: colors.textSecondary },
-                                    ]}
-                                  >
-                                    {s.address}
-                                  </Text>
-                                )}
-                              </View>
-                              {isSelected && (
-                                <Ionicons
-                                  name="checkmark"
-                                  size={20}
-                                  color={colors.primary}
-                                />
-                              )}
-                            </View>
-                          </TouchableOpacity>
-                        );
-                      })
-                    );
-                  })()}
-                </>
-              )}
-            </View>
-          )}
-
-          {/* Customer Info */}
-          <View style={styles.sectionWrapper}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="person" size={16} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Customer (optional)
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.formCard,
-                Shadow.sm,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.borderLight,
-                },
-              ]}
-            >
-              <Input
-                label="Name"
-                placeholder="Customer name"
-                value={customerName}
-                onChangeText={setCustomerName}
-                leftIcon="person-outline"
-              />
-              <Input
-                label="Phone"
-                placeholder="Phone number"
-                value={customerPhone}
-                onChangeText={setCustomerPhone}
-                keyboardType="phone-pad"
-                leftIcon="call-outline"
-              />
-              <Input
-                label="Notes"
-                placeholder="Sale notes..."
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-              />
-            </View>
+              ))
+            )}
           </View>
+
+          <Input
+            label="Sale Notes"
+            placeholder="Additional details..."
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            style={{ marginBottom: Spacing.xl }}
+          />
 
           {/* Total & Submit */}
           <View
@@ -865,9 +563,6 @@ export default function CreateSaleScreen() {
                 ৳{total.toLocaleString()}
               </Text>
             </View>
-            <Text style={[styles.itemCountText, { color: colors.textMuted }]}>
-              {items.length} item{items.length !== 1 ? "s" : ""} selected
-            </Text>
           </View>
 
           <Button
@@ -880,34 +575,140 @@ export default function CreateSaleScreen() {
         </ScrollView>
       </View>
 
-      {/* Manual Quantity Modal */}
-      <Modal
-        visible={qtyModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setQtyModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
+      {/* Product Selection Modal */}
+      <Modal visible={showProductModal} animationType="slide" transparent>
+        <View
+          style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}
+        >
           <View
-            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+            style={[
+              styles.modalContentFull,
+              { backgroundColor: colors.surface },
+            ]}
           >
-            <View style={styles.modalHeader}>
+            <View
+              style={[
+                styles.modalHeader,
+                { borderBottomColor: colors.borderLight },
+              ]}
+            >
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Update Quantity
+                Select Product
               </Text>
-              <TouchableOpacity onPress={() => setQtyModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.textMuted} />
+              <TouchableOpacity
+                onPress={() => {
+                  setShowProductModal(false);
+                  setProdSearch("");
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
+            <View style={styles.modalSearchBox}>
+              <Ionicons
+                name="search"
+                size={18}
+                color={colors.textMuted}
+                style={{ marginRight: Spacing.sm }}
+              />
+              <TextInput
+                placeholder="Search products..."
+                placeholderTextColor={colors.textMuted}
+                style={{ flex: 1, color: colors.text, fontSize: FontSize.md }}
+                value={prodSearch}
+                onChangeText={setProdSearch}
+                autoFocus
+              />
+            </View>
+            <FlatList
+              data={filteredStock}
+              keyExtractor={(item, index) =>
+                item.product_id || index.toString()
+              }
+              contentContainerStyle={{ padding: Spacing.lg }}
+              renderItem={({ item }) => {
+                const pid = item.product_id || item.product?.id;
+                const isAdded = items.some((it) => it.product_id === pid);
+                const available = item.quantity_remaining ?? item.quantity;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.spListItem,
+                      { borderBottomColor: colors.borderLight },
+                      isAdded && { opacity: 0.5 },
+                    ]}
+                    onPress={() => !isAdded && available > 0 && addItem(item)}
+                    disabled={isAdded || available <= 0}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontWeight: FontWeight.medium,
+                        }}
+                      >
+                        {item.product?.name || item.product_name}
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.textMuted,
+                          fontSize: FontSize.sm,
+                        }}
+                      >
+                        Available: {available}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text
+                        style={{
+                          color: colors.primary,
+                          fontWeight: FontWeight.bold,
+                        }}
+                      >
+                        ৳{Number(item.product?.price || 0).toLocaleString()}
+                      </Text>
+                      {isAdded ? (
+                        <Badge text="Added" variant="success" />
+                      ) : available <= 0 ? (
+                        <Badge text="Out of Stock" variant="danger" />
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: colors.textMuted,
+                    marginTop: Spacing["2xl"],
+                  }}
+                >
+                  No products found
+                </Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
 
+      {/* Manual Quantity Modal */}
+      <Modal visible={qtyModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlayCenter}>
+          <View
+            style={[
+              styles.modalContentCenter,
+              { backgroundColor: colors.surface },
+            ]}
+          >
             <Text
-              style={[styles.modalSubtitle, { color: colors.textSecondary }]}
+              style={[
+                styles.modalTitle,
+                { color: colors.text, marginBottom: Spacing.md },
+              ]}
             >
-              {editingItemIndex !== null
-                ? items[editingItemIndex].product_name
-                : ""}
+              Update Quantity
             </Text>
-
             <Input
               label="Enter Quantity"
               placeholder="0"
@@ -916,13 +717,6 @@ export default function CreateSaleScreen() {
               keyboardType="number-pad"
               autoFocus
             />
-
-            {editingItemIndex !== null && (
-              <Text style={[styles.stockInfoText, { color: colors.textMuted }]}>
-                Available: {items[editingItemIndex].available}
-              </Text>
-            )}
-
             <View style={styles.modalActions}>
               <Button
                 title="Cancel"
@@ -947,57 +741,60 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   mainContent: { flex: 1 },
   content: { padding: Spacing.lg, paddingBottom: Spacing["5xl"] },
-  headerSection: {
-    alignItems: "center",
-    marginBottom: Spacing["2xl"],
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.md,
-  },
-  title: {
-    fontSize: FontSize["2xl"],
-    fontWeight: FontWeight.bold,
-    marginBottom: Spacing.xs,
-  },
-  subtitle: {
-    fontSize: FontSize.sm,
-    textAlign: "center",
-  },
-  sectionWrapper: {
-    marginBottom: Spacing.xl,
-  },
+  sectionWrapper: { marginBottom: Spacing.xl },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  sectionTitle: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-  },
-  emptyStock: {
+  sectionTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
+  pickerBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing["2xl"],
-    gap: Spacing.sm,
-  },
-  emptyText: { fontSize: FontSize.sm },
-  stockCard: {
+    justifyContent: "space-between",
+    padding: Spacing.md,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    padding: Spacing.lg,
-    marginBottom: Spacing.sm,
   },
-  stockRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
-  stockInfo: { flex: 1 },
-  stockName: { fontSize: FontSize.md, fontWeight: FontWeight.medium },
-  stockQty: { fontSize: FontSize.xs, marginTop: 1 },
-  stockPrice: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  pickerDropdown: {
+    marginTop: Spacing.xs,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  pickerSearch: {
+    padding: Spacing.md,
+    borderBottomWidth: 1,
+    fontSize: FontSize.sm,
+  },
+  pickerItem: {
+    padding: Spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#eee",
+  },
+  formCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    gap: Spacing.sm,
+  },
+  addItemBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+  },
+  emptyItems: {
+    padding: Spacing.xl,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderStyle: "dashed",
+    borderRadius: BorderRadius.md,
+  },
   itemCard: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
@@ -1007,11 +804,7 @@ const styles = StyleSheet.create({
   itemRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   itemName: { fontSize: FontSize.md, fontWeight: FontWeight.medium },
   itemSub: { fontSize: FontSize.xs, marginTop: 2 },
-  qtyControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
+  qtyControls: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   qtyBtn: {
     width: 28,
     height: 28,
@@ -1021,79 +814,11 @@ const styles = StyleSheet.create({
   },
   qtyDisplay: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-    minWidth: 40,
+    minWidth: 36,
     alignItems: "center",
   },
-  qtyText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    textAlign: "center",
-  },
+  qtyText: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
   removeBtn: { padding: Spacing.sm },
-  formCard: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-  },
-  storeChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-  },
-  storeChipText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  inlineSearch: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    marginBottom: Spacing.sm,
-  },
-  inlineSearchInput: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
-    fontSize: FontSize.sm,
-  },
-  showMoreBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.xs,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    marginTop: Spacing.xs,
-  },
-  showMoreText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  selectedStoreCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    marginTop: Spacing.xs,
-  },
-  selectedStoreName: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
   totalCard: {
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
@@ -1107,18 +832,20 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: FontSize.lg, fontWeight: FontWeight.medium },
   totalValue: { fontSize: FontSize["2xl"], fontWeight: FontWeight.bold },
-  itemCountText: {
-    fontSize: FontSize.xs,
-    marginTop: Spacing.xs,
-  },
-  modalOverlay: {
+  modalOverlay: { flex: 1, justifyContent: "flex-end" },
+  modalOverlayCenter: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
     padding: Spacing.xl,
   },
-  modalContent: {
+  modalContentFull: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    height: "90%",
+  },
+  modalContentCenter: {
     width: "100%",
     maxWidth: 400,
     borderRadius: BorderRadius.lg,
@@ -1129,24 +856,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
   },
-  modalTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
+  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  modalSearchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: Spacing.md,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: "#f5f5f5",
   },
-  modalSubtitle: {
-    fontSize: FontSize.sm,
-    marginBottom: Spacing.lg,
-  },
-  stockInfoText: {
-    fontSize: FontSize.xs,
-    marginBottom: Spacing.lg,
-    marginTop: -Spacing.md,
+  spListItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
   },
   modalActions: {
     flexDirection: "row",
     gap: Spacing.md,
+    marginTop: Spacing.lg,
   },
   themeToggle: {
     width: 44,

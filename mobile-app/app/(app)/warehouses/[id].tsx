@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
+  Modal,
+  TextInput,
+  FlatList,
 } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
@@ -44,8 +47,15 @@ export default function WarehouseDetailScreen() {
   };
 
   const [warehouse, setWarehouse] = useState<any>(null);
+  const [assignedUsers, setAssignedUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState("");
+
+  // Assign Salesperson Modal
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [salespersons, setSalespersons] = useState<any[]>([]);
+  const [spSearch, setSpSearch] = useState("");
+  const [assigning, setAssigning] = useState(false);
 
   const fetchWarehouse = useCallback(async () => {
     try {
@@ -54,15 +64,50 @@ export default function WarehouseDetailScreen() {
     } catch (err) {
       console.error("Warehouse fetch error:", err);
       Alert.alert("Error", "Failed to load warehouse");
-    } finally {
-      setLoading(false);
     }
   }, [id]);
 
+  const fetchAssignedUsers = useCallback(async () => {
+    try {
+      const response = await api.get(
+        `${Endpoints.WAREHOUSE_USERS}/warehouse/${id}`,
+      );
+      const result = response.data?.data || response.data;
+      setAssignedUsers(
+        Array.isArray(result) ? result : result?.data || result?.items || [],
+      );
+    } catch (err) {
+      console.error("Assigned users fetch error:", err);
+    }
+  }, [id]);
+
+  const fetchAllSalespersons = useCallback(async () => {
+    try {
+      const res = await api.get(Endpoints.USERS, { params: { limit: 100 } });
+      const result = res.data?.data || res.data;
+      const allUsers =
+        result?.data || result?.items || (Array.isArray(result) ? result : []);
+      setSalespersons(
+        allUsers.filter(
+          (u: any) => u.role === "SALESPERSON" && u.is_active !== false,
+        ),
+      );
+    } catch (err) {
+      console.error("Salespersons fetch error:", err);
+    }
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([fetchWarehouse(), fetchAssignedUsers()]);
+    if (canEdit) await fetchAllSalespersons();
+    setLoading(false);
+  }, [fetchWarehouse, fetchAssignedUsers, fetchAllSalespersons, canEdit]);
+
   useFocusEffect(
     useCallback(() => {
-      fetchWarehouse();
-    }, [fetchWarehouse]),
+      loadData();
+    }, [loadData]),
   );
 
   const handleToggleActive = () => {
@@ -130,6 +175,52 @@ export default function WarehouseDetailScreen() {
     );
   };
 
+  const handleAssignSalesperson = async (userId: string) => {
+    setAssigning(true);
+    try {
+      await api.post(Endpoints.WAREHOUSE_USERS_ASSIGN, {
+        warehouse_id: id,
+        user_id: userId,
+      });
+      Alert.alert("Success", "Salesperson assigned to warehouse");
+      setShowAssignModal(false);
+      fetchAssignedUsers();
+    } catch (err: any) {
+      Alert.alert(
+        "Error",
+        err.response?.data?.message || "Failed to assign salesperson",
+      );
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleUnassign = (userId: string, name: string) => {
+    Alert.alert(
+      "Unassign Salesperson",
+      `Are you sure you want to remove "${name}" from this warehouse?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Unassign",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete(`${Endpoints.WAREHOUSE_USERS}/${id}/${userId}`);
+              Alert.alert("Success", "Salesperson unassigned");
+              fetchAssignedUsers();
+            } catch (err: any) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Failed to unassign",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
@@ -148,6 +239,12 @@ export default function WarehouseDetailScreen() {
       </View>
     );
   }
+
+  const filteredSps = salespersons.filter(
+    (s) =>
+      s.name.toLowerCase().includes(spSearch.toLowerCase()) ||
+      s.email.toLowerCase().includes(spSearch.toLowerCase()),
+  );
 
   return (
     <SafeAreaView
@@ -219,6 +316,83 @@ export default function WarehouseDetailScreen() {
             />
           </View>
 
+          {/* Assigned Salespersons */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Assigned Salespersons
+            </Text>
+            {canEdit && (
+              <TouchableOpacity onPress={() => setShowAssignModal(true)}>
+                <Ionicons name="add-circle" size={24} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View
+            style={[
+              styles.infoCard,
+              Shadow.sm,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+                maxHeight: 250,
+              },
+            ]}
+          >
+            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true}>
+              {assignedUsers.length === 0 ? (
+                <Text
+                  style={{
+                    color: colors.textMuted,
+                    textAlign: "center",
+                    paddingVertical: Spacing.md,
+                  }}
+                >
+                  No salespersons assigned
+                </Text>
+              ) : (
+                assignedUsers.map((item) => (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.assignedUserRow,
+                      {
+                        borderBottomWidth: 0,
+                      },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontWeight: FontWeight.medium,
+                        }}
+                      >
+                        {item.user?.name}
+                      </Text>
+                      <Text
+                        style={{ color: colors.textMuted, fontSize: FontSize.xs }}
+                      >
+                        {item.user?.email}
+                      </Text>
+                    </View>
+                    {canEdit && (
+                      <TouchableOpacity
+                        onPress={() => handleUnassign(item.user?.id, item.user?.name)}
+                      >
+                        <Ionicons
+                          name="remove-circle-outline"
+                          size={20}
+                          color={colors.danger}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+
           {/* Info */}
           <View
             style={[
@@ -260,7 +434,19 @@ export default function WarehouseDetailScreen() {
                   })
                 }
                 variant="primary"
-                icon={<Ionicons name="add-circle-outline" size={18} color="#FFF" />}
+                icon={
+                  <Ionicons name="add-circle-outline" size={18} color="#FFF" />
+                }
+                style={{ marginBottom: Spacing.sm }}
+              />
+
+              <Button
+                title="Assign Salesperson"
+                onPress={() => setShowAssignModal(true)}
+                variant="primary"
+                icon={
+                  <Ionicons name="person-add-outline" size={18} color="#FFF" />
+                }
                 style={{ marginBottom: Spacing.sm }}
               />
 
@@ -319,6 +505,118 @@ export default function WarehouseDetailScreen() {
           )}
         </ScrollView>
       </View>
+
+      {/* Assign Salesperson Modal */}
+      <Modal visible={showAssignModal} animationType="slide" transparent>
+        <View
+          style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}
+        >
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
+            <View
+              style={[
+                styles.modalHeader,
+                { borderBottomColor: colors.borderLight },
+              ]}
+            >
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Assign Salesperson
+              </Text>
+              <TouchableOpacity onPress={() => setShowAssignModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalSearchBox}>
+              <Ionicons
+                name="search"
+                size={18}
+                color={colors.textMuted}
+                style={{ marginRight: Spacing.sm }}
+              />
+              <TextInput
+                placeholder="Search salesperson..."
+                placeholderTextColor={colors.textMuted}
+                style={{ flex: 1, color: colors.text, fontSize: FontSize.md }}
+                value={spSearch}
+                onChangeText={setSpSearch}
+                autoFocus
+              />
+            </View>
+
+            {assigning && (
+              <ActivityIndicator
+                style={{ marginVertical: Spacing.md }}
+                color={colors.primary}
+              />
+            )}
+
+            <FlatList
+              data={filteredSps}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ padding: Spacing.lg }}
+              renderItem={({ item }) => {
+                const isAlreadyAssigned = assignedUsers.some(
+                  (au) => au.user_id === item.id,
+                );
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.spListItem,
+                      { borderBottomColor: colors.borderLight },
+                      isAlreadyAssigned && { opacity: 0.5 },
+                    ]}
+                    onPress={() =>
+                      !isAlreadyAssigned && handleAssignSalesperson(item.id)
+                    }
+                    disabled={isAlreadyAssigned || assigning}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontWeight: FontWeight.medium,
+                        }}
+                      >
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.textMuted,
+                          fontSize: FontSize.sm,
+                        }}
+                      >
+                        {item.email}
+                      </Text>
+                    </View>
+                    {isAlreadyAssigned ? (
+                      <Badge text="Assigned" variant="success" />
+                    ) : (
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={24}
+                        color={colors.primary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: colors.textMuted,
+                    marginTop: Spacing["2xl"],
+                  }}
+                >
+                  No salespersons found
+                </Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -379,7 +677,7 @@ const styles = StyleSheet.create({
   },
   location: { fontSize: FontSize.sm },
   infoCard: {
-    padding: Spacing.lg,
+    padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     marginBottom: Spacing.lg,
@@ -393,10 +691,51 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: FontSize.sm, flex: 1 },
   infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
   actionsSection: { marginTop: Spacing.sm },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.xs,
+  },
   sectionTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semibold,
-    marginBottom: Spacing.md,
+  },
+  assignedUserRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#eee",
+  },
+  modalOverlay: { flex: 1, justifyContent: "flex-end" },
+  modalContent: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    height: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+  },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  modalSearchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: Spacing.lg,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: "#f5f5f5",
+  },
+  spListItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
   },
   themeToggle: {
     width: 44,

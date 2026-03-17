@@ -4,12 +4,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Stock } from '../entities/stock.entity';
 import { StockAssignment } from '../entities/stock-assignment.entity';
 import { Product } from '../entities/product.entity';
 import { Warehouse } from '../entities/warehouse.entity';
 import { User } from '../entities/user.entity';
+import { WarehouseUser } from '../entities/warehouse-user.entity';
 import { AddStockDto } from './dto/add-stock.dto';
 import { AssignStockDto } from './dto/assign-stock.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
@@ -29,6 +30,8 @@ export class StockService {
     private readonly warehouseRepo: Repository<Warehouse>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(WarehouseUser)
+    private readonly warehouseUserRepo: Repository<WarehouseUser>,
     private readonly dataSource: DataSource,
     private readonly activityLogService: ActivityLogService,
   ) {}
@@ -253,10 +256,46 @@ export class StockService {
   }
 
   async getSalespersonStock(salespersonId: string) {
-    return this.assignmentRepo.find({
+    // 1. Get explicit assignments (stock specifically handed over to them)
+    const explicitAssignments = await this.assignmentRepo.find({
       where: { salesperson_id: salespersonId },
       relations: ['product', 'warehouse'],
       order: { assigned_at: 'DESC' },
     });
+
+    // 2. Get stock from warehouses they are assigned to
+    const warehouseAssignments = await this.warehouseUserRepo.find({
+      where: { user_id: salespersonId },
+    });
+
+    if (warehouseAssignments.length === 0) {
+      return explicitAssignments;
+    }
+
+    const warehouseIds = warehouseAssignments.map((wa) => wa.warehouse_id);
+
+    // Fetch stock for these warehouses
+    const warehouseStock = await this.stockRepo.find({
+      where: { warehouse_id: In(warehouseIds) },
+      relations: ['product', 'warehouse'],
+    });
+
+    // 3. Normalize warehouse stock to match the assignment format for the frontend
+    const normalizedWarehouseStock = warehouseStock.map((stock) => ({
+      id: `wh-${stock.id}`,
+      product_id: stock.product_id,
+      warehouse_id: stock.warehouse_id,
+      salesperson_id: salespersonId,
+      quantity_assigned: stock.quantity,
+      quantity_remaining: stock.quantity,
+      assigned_at: stock.updated_at,
+      product: stock.product,
+      warehouse: stock.warehouse,
+      is_warehouse_stock: true, // Tag to distinguish source
+    }));
+
+    // 4. Merge results (prioritize explicit assignments if the same product/warehouse exists?)
+    // For now, just combine them.
+    return [...explicitAssignments, ...normalizedWarehouseStock];
   }
 }

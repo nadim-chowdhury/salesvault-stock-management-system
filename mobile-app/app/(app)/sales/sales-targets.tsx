@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ import {
   Shadow,
 } from "../../../src/constants/theme";
 import PageHeader from "../../../src/components/ui/PageHeader";
+import Button from "../../../src/components/ui/Button";
 
 interface SalesTarget {
   id: string;
@@ -44,6 +45,7 @@ interface SalesTarget {
 interface Warehouse {
   id: string;
   name: string;
+  location?: string;
 }
 
 export default function SalesTargetsScreen() {
@@ -63,18 +65,39 @@ export default function SalesTargetsScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  // Search for the main list
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Create form state
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [warehouseUsers, setWarehouseUsers] = useState<any[]>([]);
-  const [selectedWarehouse, setSelectedWarehouse] = useState("");
-  const [selectedSalesperson, setSelectedSalesperson] = useState("");
+  const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
+  const [selectedSalesperson, setSelectedSalesperson] = useState<any>(null);
   const [targetAmount, setTargetAmount] = useState("");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
 
+  // Modal Picker Search
+  const [whSearch, setWhSearch] = useState("");
+  const [spSearch, setSpSearch] = useState("");
+  const [showWhPicker, setShowWhPicker] = useState(false);
+  const [showSpPicker, setShowSpPicker] = useState(false);
+
   const isAdmin = currentUser?.role === "ADMIN";
   const isManager = currentUser?.role === "MANAGER";
   const isSalesperson = currentUser?.role === "SALESPERSON";
+
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [search]);
 
   const fetchTargets = useCallback(async () => {
     if (!isAuthenticated) {
@@ -86,7 +109,7 @@ export default function SalesTargetsScreen() {
         ? Endpoints.SALES_TARGETS_MY
         : Endpoints.SALES_TARGETS;
       const res = await api.get(endpoint, {
-        params: isSalesperson ? {} : { limit: 50 },
+        params: isSalesperson ? {} : { limit: 100 },
       });
       const result = res.data?.data || res.data;
       const items = Array.isArray(result)
@@ -120,7 +143,7 @@ export default function SalesTargetsScreen() {
         ? result
         : result?.data || result?.items || [];
       setWarehouseUsers(
-        assignments.filter((a: any) => a.user?.role === "SALESPERSON"),
+        assignments.filter((a: any) => a.user?.role === "SALESPERSON" && a.user?.is_active !== false),
       );
     } catch {}
   }, []);
@@ -137,7 +160,9 @@ export default function SalesTargetsScreen() {
 
   useEffect(() => {
     if (selectedWarehouse) {
-      fetchWarehouseUsers(selectedWarehouse);
+      fetchWarehouseUsers(selectedWarehouse.id);
+    } else {
+      setWarehouseUsers([]);
     }
   }, [selectedWarehouse, fetchWarehouseUsers]);
 
@@ -162,8 +187,8 @@ export default function SalesTargetsScreen() {
     setCreating(true);
     try {
       await api.post(Endpoints.SALES_TARGETS, {
-        salesperson_id: selectedSalesperson,
-        warehouse_id: selectedWarehouse,
+        salesperson_id: selectedSalesperson.id,
+        warehouse_id: selectedWarehouse.id,
         target_amount: parseFloat(targetAmount),
         period_start: periodStart,
         period_end: periodEnd,
@@ -203,12 +228,15 @@ export default function SalesTargetsScreen() {
   };
 
   const resetForm = () => {
-    setSelectedWarehouse("");
-    setSelectedSalesperson("");
+    setSelectedWarehouse(null);
+    setSelectedSalesperson(null);
     setTargetAmount("");
     setPeriodStart("");
     setPeriodEnd("");
-    setWarehouseUsers([]);
+    setWhSearch("");
+    setSpSearch("");
+    setShowWhPicker(false);
+    setShowSpPicker(false);
   };
 
   const getProgress = (target: SalesTarget) => {
@@ -218,19 +246,36 @@ export default function SalesTargetsScreen() {
   };
 
   const formatCurrency = (val: number) =>
-    `৳${Number(val || 0).toLocaleString("en-IN", { minimumFractionDigits: 0 })}`;
+    `৳${Number(val || 0).toLocaleString("en-BD", { minimumFractionDigits: 0 })}`;
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", {
+    new Date(d).toLocaleDateString("en-GB", {
+      day: "2-digit",
       month: "short",
-      day: "numeric",
       year: "numeric",
     });
+
+  const filteredTargets = targets.filter(t => {
+    const spName = (t.salesperson?.name || "").toLowerCase();
+    const whName = (t.warehouse?.name || "").toLowerCase();
+    const q = debouncedSearch.toLowerCase();
+    return spName.includes(q) || whName.includes(q);
+  });
+
+  const filteredWhs = warehouses.filter(w => 
+    w.name.toLowerCase().includes(whSearch.toLowerCase()) || 
+    (w.location && w.location.toLowerCase().includes(whSearch.toLowerCase()))
+  );
+
+  const filteredSps = warehouseUsers.filter(wu => 
+    wu.user?.name.toLowerCase().includes(spSearch.toLowerCase()) || 
+    wu.user?.email.toLowerCase().includes(spSearch.toLowerCase())
+  );
 
   if (loading) {
     return (
       <SafeAreaView
-        style={[styles.center, { backgroundColor: colors.surface }]}
+        style={[styles.center, { backgroundColor: colors.background }]}
       >
         <ActivityIndicator size="large" color={colors.primary} />
       </SafeAreaView>
@@ -263,12 +308,33 @@ export default function SalesTargetsScreen() {
       <View
         style={[styles.mainContent, { backgroundColor: colors.background }]}
       >
+        {/* Search Bar */}
+        <View style={[styles.searchBar, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+          <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+          <TextInput
+            placeholder="Search salesperson or warehouse..."
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchInput, { color: colors.text }]}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Targets List */}
         <FlatList
-          data={targets}
+          data={filteredTargets}
           keyExtractor={(item) => item.id}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
           }
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => {
@@ -285,7 +351,7 @@ export default function SalesTargetsScreen() {
                   styles.targetCard,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    borderColor: colors.borderLight,
                   },
                   Shadow.sm,
                 ]}
@@ -414,7 +480,7 @@ export default function SalesTargetsScreen() {
           <View
             style={[styles.modalContent, { backgroundColor: colors.surface }]}
           >
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.borderLight }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Create Sales Target
               </Text>
@@ -428,113 +494,95 @@ export default function SalesTargetsScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.formContent}>
+            <ScrollView style={styles.formContent} keyboardShouldPersistTaps="handled">
               {/* Warehouse Selector */}
-              <Text
-                style={[styles.fieldLabel, { color: colors.textSecondary }]}
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Warehouse *</Text>
+              <TouchableOpacity
+                style={[styles.pickerBtn, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}
+                onPress={() => { setShowWhPicker(!showWhPicker); setShowSpPicker(false); }}
               >
-                Warehouse
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.chipScroller}
-              >
-                {warehouses.map((w) => (
-                  <TouchableOpacity
-                    key={w.id}
-                    style={[
-                      styles.selectChip,
-                      {
-                        backgroundColor:
-                          selectedWarehouse === w.id
-                            ? colors.primary
-                            : colors.surfaceSecondary,
-                        borderColor:
-                          selectedWarehouse === w.id
-                            ? colors.primary
-                            : colors.border,
-                      },
-                    ]}
-                    onPress={() => {
-                      setSelectedWarehouse(w.id);
-                      setSelectedSalesperson("");
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          selectedWarehouse === w.id ? "#FFF" : colors.text,
-                        fontSize: FontSize.sm,
-                      }}
-                    >
-                      {w.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                <Text style={{ color: selectedWarehouse ? colors.text : colors.textMuted }}>
+                  {selectedWarehouse ? selectedWarehouse.name : "Select Warehouse"}
+                </Text>
+                <Ionicons name={showWhPicker ? "chevron-up" : "chevron-down"} size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+              {showWhPicker && (
+                <View style={[styles.pickerDropdown, { borderColor: colors.border }]}>
+                  <TextInput
+                    placeholder="Search warehouse..."
+                    style={[styles.pickerSearch, { color: colors.text, borderBottomColor: colors.borderLight }]}
+                    value={whSearch}
+                    onChangeText={setWhSearch}
+                    autoFocus
+                  />
+                  <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                    {filteredWhs.map(w => (
+                      <TouchableOpacity
+                        key={w.id}
+                        style={[styles.pickerItem, selectedWarehouse?.id === w.id && { backgroundColor: colors.primary + "10" }]}
+                        onPress={() => { setSelectedWarehouse(w); setShowWhPicker(false); setSelectedSalesperson(null); }}
+                      >
+                        <Text style={{ color: colors.text }}>{w.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
 
               {/* Salesperson Selector */}
-              {selectedWarehouse && (
-                <>
-                  <Text
-                    style={[styles.fieldLabel, { color: colors.textSecondary }]}
-                  >
-                    Salesperson
-                  </Text>
-                  {warehouseUsers.length === 0 ? (
-                    <Text
-                      style={[styles.noItemsText, { color: colors.textMuted }]}
-                    >
-                      No salespersons assigned to this warehouse
-                    </Text>
-                  ) : (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.chipScroller}
-                    >
-                      {warehouseUsers.map((wu: any) => (
-                        <TouchableOpacity
-                          key={wu.user_id}
-                          style={[
-                            styles.selectChip,
-                            {
-                              backgroundColor:
-                                selectedSalesperson === wu.user_id
-                                  ? colors.primary
-                                  : colors.surfaceSecondary,
-                              borderColor:
-                                selectedSalesperson === wu.user_id
-                                  ? colors.primary
-                                  : colors.border,
-                            },
-                          ]}
-                          onPress={() => setSelectedSalesperson(wu.user_id)}
-                        >
-                          <Text
-                            style={{
-                              color:
-                                selectedSalesperson === wu.user_id
-                                  ? "#FFF"
-                                  : colors.text,
-                              fontSize: FontSize.sm,
-                            }}
-                          >
-                            {wu.user?.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  )}
-                </>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Salesperson *</Text>
+              <TouchableOpacity
+                style={[
+                  styles.pickerBtn, 
+                  { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                  !selectedWarehouse && { opacity: 0.5 }
+                ]}
+                onPress={() => { 
+                  if (!selectedWarehouse) {
+                    Alert.alert("Warehouse Required", "Please select a warehouse first");
+                    return;
+                  }
+                  setShowSpPicker(!showSpPicker); 
+                  setShowWhPicker(false); 
+                }}
+              >
+                <Text style={{ color: selectedSalesperson ? colors.text : colors.textMuted }}>
+                  {selectedSalesperson ? selectedSalesperson.user?.name : "Select Salesperson"}
+                </Text>
+                <Ionicons name={showSpPicker ? "chevron-up" : "chevron-down"} size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+              {showSpPicker && (
+                <View style={[styles.pickerDropdown, { borderColor: colors.border }]}>
+                  <TextInput
+                    placeholder="Search salesperson..."
+                    style={[styles.pickerSearch, { color: colors.text, borderBottomColor: colors.borderLight }]}
+                    value={spSearch}
+                    onChangeText={setSpSearch}
+                    autoFocus
+                  />
+                  <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                    {filteredSps.map(wu => (
+                      <TouchableOpacity
+                        key={wu.user_id}
+                        style={[styles.pickerItem, selectedSalesperson?.id === wu.id && { backgroundColor: colors.primary + "10" }]}
+                        onPress={() => { setSelectedSalesperson(wu); setShowSpPicker(false); }}
+                      >
+                        <Text style={{ color: colors.text }}>{wu.user?.name}</Text>
+                        <Text style={{ color: colors.textMuted, fontSize: 12 }}>{wu.user?.email}</Text>
+                      </TouchableOpacity>
+                    ))}
+                    {filteredSps.length === 0 && (
+                      <Text style={{ padding: Spacing.md, color: colors.textMuted, textAlign: "center" }}>No salespersons found</Text>
+                    )}
+                  </ScrollView>
+                </View>
               )}
 
               {/* Target Amount */}
               <Text
                 style={[styles.fieldLabel, { color: colors.textSecondary }]}
               >
-                Target Amount (৳)
+                Target Amount (৳) *
               </Text>
               <TextInput
                 style={[
@@ -547,69 +595,40 @@ export default function SalesTargetsScreen() {
                 ]}
                 value={targetAmount}
                 onChangeText={setTargetAmount}
-                placeholder="e.g. 50000"
+                placeholder="e.g. 100000"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="numeric"
               />
 
-              {/* Period */}
-              <Text
-                style={[styles.fieldLabel, { color: colors.textSecondary }]}
-              >
-                Period Start (YYYY-MM-DD)
-              </Text>
-              <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    color: colors.text,
-                    borderColor: colors.border,
-                  },
-                ]}
-                value={periodStart}
-                onChangeText={setPeriodStart}
-                placeholder="2026-03-01"
-                placeholderTextColor={colors.textMuted}
-              />
+              <View style={styles.row}>
+                <View style={{ flex: 1, marginRight: Spacing.sm }}>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Start Date *</Text>
+                  <TextInput
+                    style={[styles.textInput, { backgroundColor: colors.surfaceSecondary, color: colors.text, borderColor: colors.border }]}
+                    value={periodStart}
+                    onChangeText={setPeriodStart}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                </View>
+                <View style={{ flex: 1, marginLeft: Spacing.sm }}>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>End Date *</Text>
+                  <TextInput
+                    style={[styles.textInput, { backgroundColor: colors.surfaceSecondary, color: colors.text, borderColor: colors.border }]}
+                    value={periodEnd}
+                    onChangeText={setPeriodEnd}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                </View>
+              </View>
 
-              <Text
-                style={[styles.fieldLabel, { color: colors.textSecondary }]}
-              >
-                Period End (YYYY-MM-DD)
-              </Text>
-              <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    color: colors.text,
-                    borderColor: colors.border,
-                  },
-                ]}
-                value={periodEnd}
-                onChangeText={setPeriodEnd}
-                placeholder="2026-03-31"
-                placeholderTextColor={colors.textMuted}
-              />
-
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  {
-                    backgroundColor: colors.primary,
-                    opacity: creating ? 0.7 : 1,
-                  },
-                ]}
+              <Button
+                title="Create Target"
                 onPress={handleCreate}
-                disabled={creating}
-              >
-                {creating ? (
-                  <ActivityIndicator color="#FFF" size="small" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Create Target</Text>
-                )}
-              </TouchableOpacity>
+                loading={creating}
+                style={{ marginTop: Spacing.xl, marginBottom: Spacing["3xl"] }}
+              />
             </ScrollView>
           </View>
         </View>
@@ -633,6 +652,21 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm + 2,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSize.md,
+  },
   fab: {
     position: "absolute",
     bottom: 24,
@@ -716,7 +750,7 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
-    maxHeight: "80%",
+    maxHeight: "90%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -724,42 +758,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
   },
   modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
   formContent: { padding: Spacing.lg },
   fieldLabel: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
+    fontWeight: FontWeight.semibold,
     marginBottom: Spacing.xs,
     marginTop: Spacing.md,
   },
-  chipScroller: { maxHeight: 44 },
-  selectChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    marginRight: Spacing.sm,
+  pickerBtn: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between", 
+    padding: Spacing.md, 
+    borderRadius: BorderRadius.md, 
+    borderWidth: 1 
   },
-  noItemsText: { fontSize: FontSize.sm, fontStyle: "italic" },
+  pickerDropdown: { 
+    marginTop: Spacing.xs, 
+    borderRadius: BorderRadius.md, 
+    borderWidth: 1, 
+    overflow: "hidden" 
+  },
+  pickerSearch: { 
+    padding: Spacing.md, 
+    borderBottomWidth: 1, 
+    fontSize: FontSize.sm 
+  },
+  pickerItem: { 
+    padding: Spacing.md, 
+    borderBottomWidth: 0.5, 
+    borderBottomColor: "#eee" 
+  },
+  row: { flexDirection: "row", alignItems: "center" },
   textInput: {
     borderWidth: 1,
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.md,
     padding: Spacing.md,
     fontSize: FontSize.md,
-  },
-  submitButton: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    marginTop: Spacing.xl,
-    marginBottom: Spacing["3xl"],
-  },
-  submitButtonText: {
-    color: "#FFF",
-    fontSize: FontSize.md,
-    fontWeight: "bold",
   },
   themeToggle: {
     width: 44,

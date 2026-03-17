@@ -5,6 +5,7 @@ import { StockAssignment } from '../entities/stock-assignment.entity';
 import { Product } from '../entities/product.entity';
 import { Warehouse } from '../entities/warehouse.entity';
 import { User } from '../entities/user.entity';
+import { WarehouseUser } from '../entities/warehouse-user.entity';
 import { StockService } from './stock.service';
 import { StockController } from './stock.controller';
 
@@ -16,6 +17,7 @@ import { StockController } from './stock.controller';
       Product,
       Warehouse,
       User,
+      WarehouseUser,
     ]),
   ],
   controllers: [StockController],

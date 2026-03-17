@@ -31,7 +31,6 @@ import PageHeader from "@/src/components/ui/PageHeader";
 import { useAuthStore } from "../../../src/stores/auth-store";
 import { useThemeStore } from "../../../src/stores/theme-store";
 
-type TabType = "warehouse" | "assignments";
 type StockSort =
   | "newest"
   | "product_asc"
@@ -52,9 +51,7 @@ export default function StockScreen() {
     setThemeMode(nextMode);
   };
 
-  const [tab, setTab] = useState<TabType>("warehouse");
   const [stocks, setStocks] = useState<any[]>([]);
-  const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -107,30 +104,12 @@ export default function StockScreen() {
     }
   }, [isAuthenticated]);
 
-  const fetchAssignments = useCallback(async () => {
-    if (!isAuthenticated) {
-      setAssignments([]);
-      return;
-    }
-    try {
-      const response = await api.get(Endpoints.STOCK_ASSIGNMENTS, {
-        params: { page: 1, limit: 100 },
-      });
-      const result = response.data?.data || response.data;
-      setAssignments(
-        result?.data || result?.items || (Array.isArray(result) ? result : []),
-      );
-    } catch (err) {
-      console.error("Assignments fetch error:", err);
-    }
-  }, [isAuthenticated]);
-
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchWarehouseStock(), fetchAssignments()]);
+    await fetchWarehouseStock();
     setLoading(false);
     setRefreshing(false);
-  }, [fetchWarehouseStock, fetchAssignments]);
+  }, [fetchWarehouseStock]);
 
   useFocusEffect(
     useCallback(() => {
@@ -142,26 +121,6 @@ export default function StockScreen() {
     setRefreshing(true);
     fetchAll();
   };
-
-  // Reset search/sort/filter when switching tabs
-  const handleTabSwitch = (newTab: TabType) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTab(newTab);
-    setSearch("");
-    setDebouncedSearch("");
-    setSortBy("newest");
-    setStockFilter("ALL");
-    setShowSort(false);
-  };
-
-  const tabs: {
-    key: TabType;
-    label: string;
-    icon: keyof typeof Ionicons.glyphMap;
-  }[] = [
-    { key: "warehouse", label: "Warehouse Stock", icon: "cube-outline" },
-    { key: "assignments", label: "Assignments", icon: "people-outline" },
-  ];
 
   const sortOptions: {
     label: string;
@@ -185,7 +144,6 @@ export default function StockScreen() {
     { label: "In Stock", value: "OK", icon: "checkmark-circle-outline" },
   ];
 
-  // Filter and sort warehouse stock
   const filteredStocks = stocks
     .filter((item) => {
       const name = (item.product?.name || "").toLowerCase();
@@ -211,50 +169,6 @@ export default function StockScreen() {
           return (
             new Date(b.created_at || b.added_at || 0).getTime() -
             new Date(a.created_at || a.added_at || 0).getTime()
-          );
-      }
-    });
-
-  // Filter and sort assignments
-  const filteredAssignments = assignments
-    .filter((item) => {
-      const product = (item.product?.name || "").toLowerCase();
-      const salesperson = (item.salesperson?.name || "").toLowerCase();
-      const warehouse = (item.warehouse?.name || "").toLowerCase();
-      const q = debouncedSearch.toLowerCase();
-      if (
-        q &&
-        !product.includes(q) &&
-        !salesperson.includes(q) &&
-        !warehouse.includes(q)
-      )
-        return false;
-      const remaining = item.quantity_remaining ?? item.quantity ?? 0;
-      if (stockFilter === "LOW" && remaining >= 5) return false;
-      if (stockFilter === "OK" && remaining < 5) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "product_asc":
-          return (a.product?.name || "").localeCompare(b.product?.name || "");
-        case "product_desc":
-          return (b.product?.name || "").localeCompare(a.product?.name || "");
-        case "qty_asc":
-          return (
-            (a.quantity_remaining ?? a.quantity ?? 0) -
-            (b.quantity_remaining ?? b.quantity ?? 0)
-          );
-        case "qty_desc":
-          return (
-            (b.quantity_remaining ?? b.quantity ?? 0) -
-            (a.quantity_remaining ?? a.quantity ?? 0)
-          );
-        case "newest":
-        default:
-          return (
-            new Date(b.assigned_at || b.created_at || 0).getTime() -
-            new Date(a.assigned_at || a.created_at || 0).getTime()
           );
       }
     });
@@ -317,77 +231,8 @@ export default function StockScreen() {
     );
   };
 
-  const renderAssignment = ({ item }: { item: any }) => (
-    <View
-      style={[
-        styles.card,
-        Shadow.sm,
-        { backgroundColor: colors.surface, borderColor: colors.borderLight },
-      ]}
-    >
-      <View style={styles.row}>
-        <View
-          style={[
-            styles.iconCircle,
-            { backgroundColor: colors.primary + "15" },
-          ]}
-        >
-          <Ionicons name="person" size={18} color={colors.primary} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.name, { color: colors.text }]}>
-            {item.salesperson?.name || "Salesperson"}
-          </Text>
-          <Text style={[styles.meta, { color: colors.textMuted }]}>
-            {item.product?.name || "Product"}
-          </Text>
-          <View style={styles.metaRow}>
-            <Ionicons
-              name="business-outline"
-              size={12}
-              color={colors.textMuted}
-            />
-            <Text style={[styles.meta, { color: colors.textMuted }]}>
-              {item.warehouse?.name || "—"}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.qtyCol}>
-          <Text style={[styles.qty, { color: colors.text }]}>
-            {item.quantity}
-          </Text>
-          <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>
-            assigned
-          </Text>
-          {item.quantity_remaining != null && (
-            <Text
-              style={[
-                styles.qtyRemaining,
-                {
-                  color:
-                    item.quantity_remaining < 5
-                      ? colors.danger
-                      : colors.success,
-                },
-              ]}
-            >
-              {item.quantity_remaining} left
-            </Text>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-
-  const data = tab === "warehouse" ? filteredStocks : filteredAssignments;
-  const renderItem = tab === "warehouse" ? renderStockItem : renderAssignment;
-  const emptyIcon = tab === "warehouse" ? "cube-outline" : "people-outline";
   const hasFilters = search.length > 0 || stockFilter !== "ALL";
-  const emptyText = hasFilters
-    ? "No matching items"
-    : tab === "warehouse"
-      ? "No stock in warehouses"
-      : "No assignments yet";
+  const emptyText = hasFilters ? "No matching items" : "No stock in warehouses";
 
   return (
     <SafeAreaView
@@ -395,8 +240,7 @@ export default function StockScreen() {
       edges={["top"]}
     >
       <PageHeader
-        title="Stock"
-        showBack
+        title="Warehouse Stock"
         right={
           <TouchableOpacity
             onPress={toggleTheme}
@@ -415,54 +259,6 @@ export default function StockScreen() {
       <View
         style={[styles.mainContent, { backgroundColor: colors.background }]}
       >
-        {/* Tabs */}
-        <View
-          style={[
-            styles.tabBar,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          {tabs.map((t) => {
-            const isActive = tab === t.key;
-            return (
-              <TouchableOpacity
-                key={t.key}
-                style={[
-                  styles.tab,
-                  isActive && {
-                    borderBottomColor: colors.primary,
-                    borderBottomWidth: 2,
-                  },
-                ]}
-                onPress={() => handleTabSwitch(t.key)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={t.icon}
-                  size={16}
-                  color={isActive ? colors.primary : colors.textMuted}
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    {
-                      color: isActive ? colors.primary : colors.textMuted,
-                      fontWeight: isActive
-                        ? FontWeight.semibold
-                        : FontWeight.regular,
-                    },
-                  ]}
-                >
-                  {t.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
         {/* Search */}
         <View
           style={[
@@ -475,11 +271,7 @@ export default function StockScreen() {
         >
           <Ionicons name="search-outline" size={18} color={colors.textMuted} />
           <TextInput
-            placeholder={
-              tab === "warehouse"
-                ? "Search by product or warehouse..."
-                : "Search by salesperson or product..."
-            }
+            placeholder="Search by product or warehouse..."
             placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -611,8 +403,8 @@ export default function StockScreen() {
           </View>
         ) : (
           <FlatList
-            data={data}
-            renderItem={renderItem}
+            data={filteredStocks}
+            renderItem={renderStockItem}
             keyExtractor={(item, i) => item.id || String(i)}
             contentContainerStyle={styles.list}
             refreshControl={
@@ -625,7 +417,7 @@ export default function StockScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <Ionicons name={emptyIcon} size={48} color={colors.textMuted} />
+                <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                   {emptyText}
                 </Text>
@@ -634,49 +426,23 @@ export default function StockScreen() {
           />
         )}
 
-        {/* Dynamic FAB based on active tab */}
-        <View style={styles.fabCol}>
-          {tab === "warehouse" ? (
-            <TouchableOpacity
-              style={[styles.fab, { backgroundColor: colors.primary }]}
-              onPress={() => router.push("/(app)/stock/add" as any)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={28} color="#FFF" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.fab, { backgroundColor: colors.primary }]}
-              onPress={() => router.push("/(app)/stock/assign" as any)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="arrow-forward" size={24} color="#FFF" />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* FAB */}
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={() => router.push("/(app)/stock/add" as any)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={28} color="#FFF" />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   mainContent: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.xs,
-    paddingVertical: Spacing.md,
-  },
-  tabLabel: {
-    fontSize: FontSize.sm,
-  },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -768,30 +534,12 @@ const styles = StyleSheet.create({
   },
   qtyCol: { alignItems: "flex-end", gap: 2 },
   qty: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
-  qtyLabel: { fontSize: FontSize.xs },
-  qtyRemaining: { fontSize: FontSize.xs, fontWeight: FontWeight.medium },
   empty: { alignItems: "center", paddingTop: Spacing["5xl"] },
   emptyText: { fontSize: FontSize.md, marginTop: Spacing.md },
-  fabCol: {
+  fab: {
     position: "absolute",
     bottom: 24,
     right: 20,
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  fabSmall: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
