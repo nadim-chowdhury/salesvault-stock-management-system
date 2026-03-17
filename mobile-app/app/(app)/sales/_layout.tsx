@@ -61,6 +61,13 @@ export default function SalesLayout() {
         }}
       />
       <Stack.Screen
+        name="scanner"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="daily-sales"
         options={{
           title: "Daily Sales Report",

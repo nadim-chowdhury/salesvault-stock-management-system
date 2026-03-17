@@ -25,6 +25,26 @@ export class DashboardController {
     return this.dashboardService.getAdminDashboard();
   }
 
+  @Get('valuation')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'Inventory Valuation',
+    description: 'Calculates total cost, retail value, and potential profit across all stock',
+  })
+  async getInventoryValuation() {
+    return this.dashboardService.getInventoryValuation();
+  }
+
+  @Get('fastest-moving')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'Fastest Moving Items',
+    description: 'Returns top 10 fastest moving items based on sales volume over the last 30 days',
+  })
+  async getFastestMovingItems() {
+    return this.dashboardService.getFastestMovingItems(30);
+  }
+
   @Get('salesperson')
   @Roles(Role.SALESPERSON)
   @ApiOperation({

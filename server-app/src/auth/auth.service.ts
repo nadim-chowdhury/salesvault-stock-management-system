@@ -121,10 +121,11 @@ export class AuthService {
       throw new ForbiddenException('Account is deactivated');
     }
 
-    // Revoke the old refresh token (rotation)
-    await this.refreshTokenRepo.update(storedToken.id, { is_revoked: true });
+    // Revoke the old refresh token (Strict rotation)
+    storedToken.is_revoked = true;
+    await this.refreshTokenRepo.save(storedToken);
 
-    // Generate new tokens
+    // Generate new access and refresh tokens
     const tokens = await this.generateTokens(storedToken.user, ip, deviceInfo);
 
     // Log token refresh

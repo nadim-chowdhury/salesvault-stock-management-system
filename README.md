@@ -85,6 +85,8 @@ All logic handled via optimized queries + indexing.
 - Assign stock to salesperson
 - Track remaining balance
 - Prevent negative stock
+- **[NEW]** Automated Low Stock Triggers via `@nestjs/schedule`
+- **[NEW]** Stock Adjustments (Reason-coded modifications to handle DAMAGED / EXPIRED items securely)
 
 ---
 
@@ -95,6 +97,7 @@ All logic handled via optimized queries + indexing.
 - Payment status
 - Cancel sale (Admin only)
 - Transaction-safe stock deduction
+- **[NEW]** `Pessimistic Locking` applied to prevent race-condition overselling.
 
 ---
 
@@ -115,6 +118,8 @@ All logic handled via optimized queries + indexing.
 - Low Stock Alerts
 - Top Salespersons
 - Recent System Activity
+- **[NEW]** Inventory Valuation (Calculated Real-Time)
+- **[NEW]** Fastest Moving Items (30-day Volume Trends)
 
 ### Salesperson Dashboard
 
@@ -179,6 +184,18 @@ All logic handled via optimized queries + indexing.
 - quantity_assigned
 - quantity_remaining CHECK >= 0
 - assigned_at
+
+---
+
+## stock_adjustments (NEW)
+
+- id
+- product_id
+- warehouse_id
+- quantity_adjusted
+- reason (DAMAGED, RETURN, CORRECTION, EXPIRY)
+- adjusted_by (Admin)
+- created_at
 
 ---
 
@@ -354,20 +371,19 @@ src/
  ├── screens/
  ├── components/
  ├── api/
- ├── store/
+ ├── stores/    (Zustand State Management)
  ├── hooks/
  ├── utils/
  ├── navigation/
 ```
 
-Security:
+Key Functionality:
 
-- Secure token storage
-- SSL pinning
-- Auto logout
-- Offline sync queue
-- Retry mechanism
-- Prevent double tap submission
+- Secure token storage (`expo-secure-store`)
+- Auto logout mechanism
+- **[NEW]** Offline Queue via `@react-native-async-storage/async-storage` for resilience during connectivity drops.
+- **[NEW]** Direct Barcode Scanning integration (`expo-camera`) on the creation flow.
+- Optimistic UI on dashboard & sales lists.
 
 ---
 

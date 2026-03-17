@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual } from 'typeorm';
 import { Sale } from '../entities/sale.entity';
+import { SaleItem } from '../entities/sale-item.entity';
 import { Stock } from '../entities/stock.entity';
+import { Product } from '../entities/product.entity';
 import { StockAssignment } from '../entities/stock-assignment.entity';
 import { ActivityLog } from '../entities/activity-log.entity';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
@@ -14,6 +16,8 @@ export class DashboardService {
     private readonly saleRepo: Repository<Sale>,
     @InjectRepository(Stock)
     private readonly stockRepo: Repository<Stock>,
+    @InjectRepository(Product)
+    private readonly productRepo: Repository<Product>,
     @InjectRepository(StockAssignment)
     private readonly assignmentRepo: Repository<StockAssignment>,
     @InjectRepository(ActivityLog)
@@ -189,5 +193,51 @@ export class DashboardService {
       },
       my_recent_activity: myRecentActivity,
     };
+  }
+
+  async getInventoryValuation() {
+    // Valuation = sum(stock.quantity * product.price) across all warehouses
+    const valuationQuery = await this.stockRepo
+      .createQueryBuilder('stock')
+      .leftJoin('stock.product', 'product')
+      .select('COALESCE(SUM(stock.quantity * product.cost_price), 0)', 'total_cost_value')
+      .addSelect('COALESCE(SUM(stock.quantity * product.price), 0)', 'total_retail_value')
+      .getRawOne();
+
+    return {
+      cost_value: Number(valuationQuery?.total_cost_value || 0),
+      retail_value: Number(valuationQuery?.total_retail_value || 0),
+      potential_profit: Number(valuationQuery?.total_retail_value || 0) - Number(valuationQuery?.total_cost_value || 0),
+    };
+  }
+
+  async getFastestMovingItems(days: number = 30) {
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - days);
+
+    // Get the most sold items across all approved sales in the last X days
+    const fastestMoving = await this.saleRepo.manager
+      .createQueryBuilder(SaleItem, 'item')
+      .leftJoin('item.sale', 'sale')
+      .leftJoinAndSelect('item.product', 'product')
+      .select('product.id', 'product_id')
+      .addSelect('product.name', 'product_name')
+      .addSelect('product.sku', 'sku')
+      .addSelect('SUM(item.quantity)', 'total_sold_quantity')
+      .where('sale.created_at >= :fromDate', { fromDate })
+      .andWhere('sale.payment_status != :cancelled', { cancelled: PaymentStatus.CANCELLED })
+      .groupBy('product.id')
+      .addGroupBy('product.name')
+      .addGroupBy('product.sku')
+      .orderBy('"total_sold_quantity"', 'DESC')
+      .take(10)
+      .getRawMany();
+
+    return fastestMoving.map((item) => ({
+      product_id: item.product_id,
+      product_name: item.product_name,
+      sku: item.sku,
+      total_sold_quantity: parseInt(item.total_sold_quantity, 10),
+    }));
   }
 }

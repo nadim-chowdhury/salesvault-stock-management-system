@@ -20,7 +20,9 @@ import { StoresModule } from './stores/stores.module';
 // App
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
+import { StockAdjustmentModule } from './stock-adjustment/stock-adjustment.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     // Global config from .env
@@ -65,6 +67,9 @@ import { AppService } from './app.service';
       },
     ]),
 
+    // Cron jobs
+    ScheduleModule.forRoot(),
+
     // Feature modules
     ActivityLogModule, // Global — must be first
     AuthModule,
@@ -77,6 +82,8 @@ import { AppService } from './app.service';
     WarehouseUsersModule,
     SalesTargetsModule,
     StoresModule,
+    StockAdjustmentModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -10,3 +10,4 @@ export { RefreshToken } from './refresh-token.entity';
 export { WarehouseUser } from './warehouse-user.entity';
 export { SalesTarget } from './sales-target.entity';
 export { Store } from './store.entity';
+export { StockAdjustment } from './stock-adjustment.entity';

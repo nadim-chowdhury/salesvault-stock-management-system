@@ -54,4 +54,6 @@ export const Endpoints = {
   // Dashboard
   DASHBOARD_ADMIN: "/dashboard/admin",
   DASHBOARD_SALESPERSON: "/dashboard/salesperson",
+  DASHBOARD_VALUATION: "/dashboard/valuation",
+  DASHBOARD_FASTEST_MOVING: "/dashboard/fastest-moving",
 } as const;
