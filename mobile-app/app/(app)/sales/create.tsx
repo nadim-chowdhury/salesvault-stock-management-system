@@ -155,6 +155,9 @@ export default function CreateSaleScreen() {
   const selectStore = (store: any | null) => {
     if (!store) {
       setSelectedStoreId(null);
+      setCustomerName("");
+      setCustomerPhone("");
+      setShowStorePicker(false);
       return;
     }
     setSelectedStoreId(store.id);
@@ -365,7 +368,10 @@ export default function CreateSaleScreen() {
                 <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
                   <TouchableOpacity
                     style={styles.pickerItem}
-                    onPress={() => selectStore(null)}
+                    onPress={() => {
+                      selectStore(null);
+                      setShowStorePicker(false);
+                    }}
                   >
                     <Text style={{ color: colors.textMuted }}>
                       No Store (General Sale)
@@ -385,9 +391,11 @@ export default function CreateSaleScreen() {
                       >
                         {s.name}
                       </Text>
-                      <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-                        {s.address}
-                      </Text>
+                      {s.address && (
+                        <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+                          {s.address}
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -470,6 +478,7 @@ export default function CreateSaleScreen() {
                     {
                       backgroundColor: colors.surface,
                       borderColor: colors.borderLight,
+                      padding: Spacing.lg,
                     },
                   ]}
                 >

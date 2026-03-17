@@ -10,6 +10,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Sale } from '../entities/sale.entity';
 import { SaleItem } from '../entities/sale-item.entity';
 import { StockAssignment } from '../entities/stock-assignment.entity';
+import { Stock } from '../entities/stock.entity';
 import { Product } from '../entities/product.entity';
 import { WarehouseUser } from '../entities/warehouse-user.entity';
 import { User } from '../entities/user.entity';
@@ -29,6 +30,8 @@ export class SalesService {
     private readonly saleRepo: Repository<Sale>,
     @InjectRepository(StockAssignment)
     private readonly assignmentRepo: Repository<StockAssignment>,
+    @InjectRepository(Stock)
+    private readonly stockRepo: Repository<Stock>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     @InjectRepository(WarehouseUser)
@@ -121,20 +124,29 @@ export class SalesService {
           );
         }
 
-        if (isAdminOrManager) {
-          // ADMIN/MANAGER: sell directly from catalog, no stock assignment needed
-          const lineTotal = Number(product.price) * item.quantity;
-          totalAmount += lineTotal;
+        let remainingNeeded = item.quantity;
 
-          saleItems.push({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: Number(product.price),
-            line_total: lineTotal,
-          });
+        if (isAdminOrManager) {
+          // ADMIN/MANAGER: deduct from warehouse stock if warehouseId is provided
+          if (warehouseId) {
+            const stock = await manager.findOne(Stock, {
+              where: { product_id: item.product_id, warehouse_id: warehouseId },
+              lock: { mode: 'pessimistic_write' },
+            });
+
+            if (stock) {
+              const take = Math.min(remainingNeeded, stock.quantity);
+              stock.quantity -= take;
+              remainingNeeded -= take;
+              await manager.save(stock);
+            }
+          } else {
+            // No warehouse provided, just proceed without stock deduction
+            remainingNeeded = 0;
+          }
         } else {
-          // SALESPERSON: deduct from assigned stock with pessimistic locking
-          const assignment = await manager
+          // SALESPERSON: deduct from assigned stock with pessimistic locking (FIFO)
+          const assignments = await manager
             .createQueryBuilder(StockAssignment, 'sa')
             .setLock('pessimistic_write')
             .where('sa.salesperson_id = :salespersonId', { salespersonId })
@@ -144,32 +156,49 @@ export class SalesService {
             .andWhere('sa.warehouse_id = :warehouseId', {
               warehouseId,
             })
-            .andWhere('sa.quantity_remaining >= :quantity', {
-              quantity: item.quantity,
-            })
+            .andWhere('sa.quantity_remaining > 0')
             .orderBy('sa.assigned_at', 'ASC') // Use oldest assignment first (FIFO)
-            .getOne();
+            .getMany();
 
-          if (!assignment) {
-            throw new BadRequestException(
-              `Insufficient stock for product "${product.name}" (SKU: ${product.sku}). Requested: ${item.quantity}`,
-            );
+          for (const assignment of assignments) {
+            const take = Math.min(remainingNeeded, assignment.quantity_remaining);
+            assignment.quantity_remaining -= take;
+            remainingNeeded -= take;
+            await manager.save(assignment);
+            if (remainingNeeded <= 0) break;
           }
 
-          // Deduct from assignment
-          assignment.quantity_remaining -= item.quantity;
-          await manager.save(assignment);
+          // If still needed, check warehouse stock
+          if (remainingNeeded > 0 && warehouseId) {
+            const stock = await manager.findOne(Stock, {
+              where: { product_id: item.product_id, warehouse_id: warehouseId },
+              lock: { mode: 'pessimistic_write' },
+            });
 
-          const lineTotal = Number(product.price) * item.quantity;
-          totalAmount += lineTotal;
-
-          saleItems.push({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: Number(product.price),
-            line_total: lineTotal,
-          });
+            if (stock) {
+              const take = Math.min(remainingNeeded, stock.quantity);
+              stock.quantity -= take;
+              remainingNeeded -= take;
+              await manager.save(stock);
+            }
+          }
         }
+
+        if (remainingNeeded > 0) {
+          throw new BadRequestException(
+            `Insufficient stock for product "${product.name}" (SKU: ${product.sku}). Requested: ${item.quantity}, Shortfall: ${remainingNeeded}`,
+          );
+        }
+
+        const lineTotal = Number(product.price) * item.quantity;
+        totalAmount += lineTotal;
+
+        saleItems.push({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: Number(product.price),
+          line_total: lineTotal,
+        });
       }
 
       // Determine status — admin/manager sales are auto-approved
@@ -281,30 +310,18 @@ export class SalesService {
         where: { sale_id: sale.id },
       });
 
-      // Restore stock to salesperson assignments
-      for (const item of sale.items) {
-        const assignment = await manager
-          .createQueryBuilder(StockAssignment, 'sa')
-          .setLock('pessimistic_write')
-          .where('sa.salesperson_id = :salespersonId', {
-            salespersonId: sale.salesperson_id,
-          })
-          .andWhere('sa.product_id = :productId', {
-            productId: item.product_id,
-          })
-          .andWhere('sa.warehouse_id = :warehouseId', {
-            warehouseId: sale.warehouse_id,
-          })
-          .orderBy('sa.assigned_at', 'ASC')
-          .getOne();
+    // Restore stock to salesperson assignments or warehouse
+    for (const item of sale.items) {
+      await this.restoreStock(
+        manager,
+        sale.salesperson_id,
+        item.product_id,
+        sale.warehouse_id,
+        item.quantity,
+      );
+    }
 
-        if (assignment) {
-          assignment.quantity_remaining += item.quantity;
-          await manager.save(assignment);
-        }
-      }
-
-      sale.status = SaleStatus.REJECTED;
+    sale.status = SaleStatus.REJECTED;
       sale.approved_by = managerId;
       sale.approved_at = new Date();
       if (reason) {
@@ -406,25 +423,15 @@ export class SalesService {
         throw new BadRequestException('Sale is already cancelled');
       }
 
-      // Restore stock to assignments
+      // Restore stock
       for (const item of sale.items) {
-        // Find the assignment and restore quantity
-        const assignment = await manager
-          .createQueryBuilder(StockAssignment, 'sa')
-          .setLock('pessimistic_write')
-          .where('sa.salesperson_id = :salespersonId', {
-            salespersonId: sale.salesperson_id,
-          })
-          .andWhere('sa.product_id = :productId', {
-            productId: item.product_id,
-          })
-          .orderBy('sa.assigned_at', 'ASC')
-          .getOne();
-
-        if (assignment) {
-          assignment.quantity_remaining += item.quantity;
-          await manager.save(assignment);
-        }
+        await this.restoreStock(
+          manager,
+          sale.salesperson_id,
+          item.product_id,
+          sale.warehouse_id,
+          item.quantity,
+        );
       }
 
       // Update sale status
@@ -470,24 +477,15 @@ export class SalesService {
         sale.payment_status !== PaymentStatus.CANCELLED &&
         sale.status !== SaleStatus.REJECTED
       ) {
-        // Restore stock to assignments
+        // Restore stock to assignments or warehouse
         for (const item of sale.items) {
-          const assignment = await manager
-            .createQueryBuilder(StockAssignment, 'sa')
-            .setLock('pessimistic_write')
-            .where('sa.salesperson_id = :salespersonId', {
-              salespersonId: sale.salesperson_id,
-            })
-            .andWhere('sa.product_id = :productId', {
-              productId: item.product_id,
-            })
-            .orderBy('sa.assigned_at', 'ASC')
-            .getOne();
-
-          if (assignment) {
-            assignment.quantity_remaining += item.quantity;
-            await manager.save(assignment);
-          }
+          await this.restoreStock(
+            manager,
+            sale.salesperson_id,
+            item.product_id,
+            sale.warehouse_id,
+            item.quantity,
+          );
         }
       }
 
@@ -650,5 +648,49 @@ export class SalesService {
       total_quantity: parseInt(r.total_quantity, 10),
       total_amount: parseFloat(r.total_amount),
     }));
+  }
+
+  private async restoreStock(
+    manager: any,
+    salespersonId: string,
+    productId: string,
+    warehouseId: string | null,
+    quantity: number,
+  ) {
+    if (!warehouseId) return;
+
+    // Try to find the most recent assignment for this salesperson/product/warehouse
+    const assignment = await manager
+      .createQueryBuilder(StockAssignment, 'sa')
+      .setLock('pessimistic_write')
+      .where('sa.salesperson_id = :salespersonId', { salespersonId })
+      .andWhere('sa.product_id = :productId', { productId })
+      .andWhere('sa.warehouse_id = :warehouseId', { warehouseId })
+      .orderBy('sa.assigned_at', 'DESC') // Use newest assignment
+      .getOne();
+
+    if (assignment) {
+      assignment.quantity_remaining += quantity;
+      await manager.save(assignment);
+    } else {
+      // Restore to warehouse stock
+      const stock = await manager.findOne(Stock, {
+        where: { product_id: productId, warehouse_id: warehouseId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (stock) {
+        stock.quantity += quantity;
+        await manager.save(stock);
+      } else {
+        // Create stock entry if it doesn't exist? (unlikely but safe)
+        const newStock = manager.create(Stock, {
+          product_id: productId,
+          warehouse_id: warehouseId,
+          quantity: quantity,
+        });
+        await manager.save(newStock);
+      }
+    }
   }
 }

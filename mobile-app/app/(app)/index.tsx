@@ -371,6 +371,12 @@ function SalespersonDashboard({
           Quick Actions
         </Text>
         <DashMenuItem
+          icon="add-circle-outline"
+          label="Create Sale"
+          onPress={() => router.push("/(app)/sales/create")}
+          colors={colors}
+        />
+        <DashMenuItem
           icon="bar-chart-outline"
           label="Daily Sales Report"
           onPress={() => router.push("/(app)/sales/daily-sales")}
