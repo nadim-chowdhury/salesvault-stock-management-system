@@ -2,9 +2,11 @@
 // For iOS Simulator use:     http://localhost:8000/api/v1
 // For Physical Device use:   http://<YOUR_PC_IP>:8000/api/v1
 //   → Run `ipconfig` in terminal and find your IPv4 address (e.g. 192.168.1.x)
-export const API_BASE_URL = __DEV__
-  ? "http://192.168.0.137:8000/api/v1"
-  : "https://salesvault-sms.vercel.app/api/v1";
+// export const API_BASE_URL = __DEV__
+//   ? "http://192.168.0.243:8000/api/v1"
+//   : "https://salesvault-sms.vercel.app/api/v1";
+
+export const API_BASE_URL = "http://192.168.0.243:8000/api/v1";
 
 export const Endpoints = {
   // Auth
@@ -36,6 +38,7 @@ export const Endpoints = {
   STOCK_ASSIGN: "/stock/assign",
   STOCK_ASSIGNMENTS: "/stock/assignments",
   MY_STOCK: "/stock/my-stock",
+  STOCK_ADJUSTMENT: "/stock-adjustments",
 
   // Sales
   SALES: "/sales",

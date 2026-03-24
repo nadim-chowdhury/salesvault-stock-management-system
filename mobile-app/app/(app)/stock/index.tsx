@@ -176,58 +176,76 @@ export default function StockScreen() {
   const renderStockItem = ({ item }: { item: any }) => {
     const isLow = (item.quantity ?? 0) < 10;
     return (
-      <View
-        style={[
-          styles.card,
-          Shadow.sm,
-          { backgroundColor: colors.surface, borderColor: colors.borderLight },
-        ]}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() =>
+          router.push({
+            pathname: "/(app)/stock/adjust" as any,
+            params: {
+              productId: item.product_id || item.product?.id,
+              warehouseId: item.warehouse_id || item.warehouse?.id,
+              currentQuantity: item.quantity,
+              productName: item.product?.name,
+            },
+          })
+        }
       >
-        <View style={styles.row}>
-          <View
-            style={[
-              styles.iconCircle,
-              {
-                backgroundColor: isLow
-                  ? colors.danger + "15"
-                  : colors.primary + "15",
-              },
-            ]}
-          >
-            <Ionicons
-              name="cube"
-              size={18}
-              color={isLow ? colors.danger : colors.primary}
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.name, { color: colors.text }]}>
-              {item.product?.name || "Product"}
-            </Text>
-            <View style={styles.metaRow}>
-              <Ionicons
-                name="business-outline"
-                size={12}
-                color={colors.textMuted}
-              />
-              <Text style={[styles.meta, { color: colors.textMuted }]}>
-                {item.warehouse?.name || "Warehouse"}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.qtyCol}>
-            <Text
+        <View
+          style={[
+            styles.card,
+            Shadow.sm,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+            },
+          ]}
+        >
+          <View style={styles.row}>
+            <View
               style={[
-                styles.qty,
-                { color: isLow ? colors.danger : colors.text },
+                styles.iconCircle,
+                {
+                  backgroundColor: isLow
+                    ? colors.danger + "15"
+                    : colors.primary + "15",
+                },
               ]}
             >
-              {item.quantity}
-            </Text>
-            {isLow && <Badge text="Low" variant="danger" />}
+              <Ionicons
+                name="cube"
+                size={18}
+                color={isLow ? colors.danger : colors.primary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.name, { color: colors.text }]}>
+                {item.product?.name || "Product"}
+              </Text>
+              <View style={styles.metaRow}>
+                <Ionicons
+                  name="business-outline"
+                  size={12}
+                  color={colors.textMuted}
+                />
+                <Text style={[styles.meta, { color: colors.textMuted }]}>
+                  {item.warehouse?.name || "Warehouse"}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.qtyCol}>
+              <Text
+                style={[
+                  styles.qty,
+                  { color: isLow ? colors.danger : colors.text },
+                ]}
+              >
+                {item.quantity}
+              </Text>
+              {isLow && <Badge text="Low" variant="danger" />}
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -417,7 +435,11 @@ export default function StockScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
+                <Ionicons
+                  name="cube-outline"
+                  size={48}
+                  color={colors.textMuted}
+                />
                 <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                   {emptyText}
                 </Text>

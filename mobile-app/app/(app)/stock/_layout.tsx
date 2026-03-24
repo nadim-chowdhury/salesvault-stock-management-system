@@ -3,11 +3,7 @@ import { Stack, useRouter } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Colors,
-  FontWeight,
-  FontSize,
-} from "../../../src/constants/theme";
+import { Colors, FontWeight, FontSize } from "../../../src/constants/theme";
 
 export default function StockLayout() {
   const scheme = useColorScheme() ?? "light";
@@ -48,6 +44,14 @@ export default function StockLayout() {
         name="assign"
         options={{
           title: "Assign Stock",
+          headerLeft: backButton,
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="adjust"
+        options={{
+          title: "Adjust Stock",
           headerLeft: backButton,
           headerShown: false,
         }}
